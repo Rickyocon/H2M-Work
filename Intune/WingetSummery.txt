@@ -1,0 +1,117 @@
+**Winget Deployment via Intune - Full Summary and Analysis**
+
+---
+
+### Objective:
+
+Deploy and manage `winget` (Windows Package Manager) across all company devices using Microsoft Intune with **SYSTEM context**, so no user interaction or elevation (UAC) is needed.
+
+---
+
+### Goals:
+
+1. Deploy and register `winget` so it's available in SYSTEM context.
+2. Ensure `winget` commands can be run silently and reliably via scheduled tasks or scripts.
+3. Package all necessary components into Intune-friendly `.intunewin` format.
+
+---
+
+### Key Components:
+
+* **App Installer** (Microsoft Store): Installs `winget`, runs in **user context**.
+* **PowerShell 7 Installer**: Needed for advanced scripting, runs in **system context**.
+* **Winget PATH Registration Script**: Makes `winget` available to SYSTEM by updating the SYSTEM PATH.
+* **Winget Upgrade Script**: Handles actual `winget upgrade` operations silently, via SYSTEM.
+
+---
+
+### What We Have Tried:
+
+#### 1. **Installing App Installer via Intune**
+
+* **Install behavior**: Set to **User** (required by App Installer).
+* **Purpose**: This places `winget.exe` in `C:\Program Files\WindowsApps`.
+
+#### 2. **Winget Registration Script**
+
+* Script locates the `Microsoft.DesktopAppInstaller_*` folder and appends its path and `WindowsApps` to SYSTEM environment variables:
+
+```powershell
+$wingetdir = (Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe" | Sort-Object Path | Select-Object -Last 1)
+$winget_folder = $wingetdir.Path
+[Environment]::SetEnvironmentVariable("Path", "$($env:Path);C:\Program Files\WindowsApps;$winget_folder", "Machine")
+```
+
+* **Logging added** for diagnostics
+* **Runs successfully under SYSTEM context**
+
+#### 3. **PsExec Testing**
+
+* Used `PsExec -i -s cmd.exe` to simulate SYSTEM environment.
+* Confirmed `winget --version` works **only after PATH is correctly registered**.
+
+#### 4. **Upgrade Script**
+
+* Checks for upgrades and runs `winget upgrade --all` silently.
+* Registered as a **Scheduled Task** under SYSTEM.
+* Early runs failed due to `winget` not being found (PATH not resolved yet).
+
+---
+
+### Failures & Roadblocks:
+
+* **winget not recognized** in SYSTEM even after user context install.
+* **Environment variable change** via `[System.Environment]::SetEnvironmentVariable("Path", ..., "User")` does **not affect SYSTEM**.
+* `winget.exe` is **not directly accessible** via traditional paths; lives inside WindowsApps.
+* Intune system context does **not inherit user PATH**, hence needed to set SYSTEM PATH.
+
+---
+
+### Working Solution Components:
+
+1. **Install App Installer (User Context)**
+
+   * Installs `winget.exe`
+
+2. **Run Registration Script (System Context)**
+
+   * Adds `C:\Program Files\WindowsApps` and `Microsoft.DesktopAppInstaller_*` to SYSTEM PATH
+   * Confirmed using `[System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)`
+
+3. **Verification**
+
+   * Use PsExec to simulate SYSTEM (`PsExec -i -s powershell.exe`) and run `winget --version`
+
+4. **Upgrade Script**
+
+   * Scheduled task or Intune script that performs upgrade
+   * Now recognizes `winget` under SYSTEM
+
+---
+
+### Best Practices for Intune Packaging:
+
+* Use `powershell.exe` as install command for scripts:
+
+```cmd
+powershell.exe -ExecutionPolicy Bypass -NoLogo -NoProfile -WindowStyle Hidden -File Winget_Update.ps1
+```
+
+* **Avoid using absolute paths** like `%SystemRoot%`, `C:\Windows\System32`, etc., unless needed
+
+---
+
+### To-Do (when resuming):
+
+* Test full deployment on new device
+* Package detection rule for PATH registration app (e.g., check if SYSTEM PATH contains `Microsoft.DesktopAppInstaller_`)
+* Document fallback procedures if PATH registration fails
+* Monitor for any `0x8a15000f` source registration issues (handle via `Add-AppxPackage`)
+
+---
+
+### Final Notes:
+
+* `winget` is not truly system-installed; relies on user-based App Installer but can be SYSTEM-accessible by correct PATH injection
+* This solution scales across enterprise via Intune
+* Avoid doing per-user registration scripts for automation — stick with SYSTEM for upgrades, deployments
