@@ -3,7 +3,7 @@ Start-Transcript -Path "$LogPath\WingetUpdateScript.log" -Append
 
 # Define paths
 $SupportPath = "C:\Support"
-$AppServerPath = "\\app-server\APPS\_Intune Applications\1 Source\PowerShell\WingetEXE-Path"
+$AppServerPath = "\\app-server\APPS\_Intune Applications\1 Source\PowerShell\Winget"
 
 # Cleanup
 Remove-Item "$SupportPath\Winget_Update.ps1" -Force -ErrorAction SilentlyContinue
