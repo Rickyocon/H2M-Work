@@ -1,39 +1,63 @@
 About This Project
-This project was created to solve a common yet frustrating challenge in enterprise IT environments: automating WinGet upgrades at scale using Microsoft Intune, without requiring user interaction or admin approval.
+This project was created to solve a common challenge in enterprise IT: automating WinGet upgrades silently and at scale using Microsoft Intune, without requiring user permissions, UAC prompts, or manual input.
 
 🎯 The Problem
-WinGet, Microsoft’s official package manager, is powerful — but out of the box, it is designed to run in a user context and struggles with:
+Although WinGet is a powerful package manager, deploying it and running updates under SYSTEM context introduces several blockers:
 
-Lack of visibility when run under SYSTEM context
+It's not available in the system’s PATH by default.
 
-UAC prompts for some updates
+Many packages are user-scoped and need per-user context to update.
 
-Inability to update user-scoped apps
+Microsoft’s documentation provides very limited guidance on enterprise deployment.
 
-Poor documentation for enterprise deployment
+UAC prompts and permissions interfere with automation.
 
 🔧 The Solution
-This project delivers a fully automated, Intune-deployable WinGet upgrade system, which:
+This project builds a complete, working solution that:
 
-Installs and configures PowerShell 7
+Installs PowerShell 7 to ensure compatibility and module access.
 
-Ensures WinGet is accessible in the SYSTEM environment
+Installs (or ensures presence of) the App Installer package from the Microsoft Store.
 
-Adds necessary system-level PATH entries
+Adds WinGet to the system-level PATH so it’s recognized in SYSTEM context.
 
-Registers the App Installer package if required
+Uses scheduled or Intune-triggered scripts to run winget upgrade commands under SYSTEM context—completely silently.
 
-Runs regular, silent, SYSTEM-context WinGet upgrade jobs
+🛠️ Order of Operations
+To successfully deploy this solution, use the following deployment sequence in Intune:
 
-Avoids user prompts or the need for elevated permissions
+PowerShell7.ps1
+
+Installs the latest version of PowerShell 7 (required for some module and compatibility support).
+
+Install App Installer from the Microsoft Store (User Context)
+
+WinGet is bundled with this. If it's not preinstalled, it must be deployed via Microsoft Store for Business or Company Portal in the user context.
+
+If unavailable, consider alternative offline installers or manual appx deployment (TBD).
+
+WingetSystemPath.ps1
+
+Adds the WinGet executable folder to the System PATH, allowing it to be recognized under SYSTEM context in scheduled tasks or Intune.
+
+WingetUpdates-SYSTEM.ps1
+
+Runs winget upgrade --all silently, system-wide. Only affects packages that are system-scoped.
+
+⚠️ Additional Notes
+WingetUpdates-USER.ps1 is an optional script that allows WinGet upgrades in user context. It still requires user interaction/UAC, so it's mostly useful for on-demand upgrades or troubleshooting.
+
+WinGet Registration Script is included to re-register the App Installer package. This is helpful if winget is not recognized in elevated PowerShell, even though it exists.
+
+Testing with PsExec.exe: During development, PsExec -s was used to launch PowerShell in SYSTEM context to simulate Intune behavior and verify winget recognition and functionality.
 
 ✅ Key Benefits
-No user interaction or UAC required
+No UAC or user interaction required
 
-Improves device hygiene and reduces vulnerabilities from outdated software
+Intune-managed, automated software updates
 
-Saves IT teams time by eliminating manual update tasks
+Improved compliance, reduced attack surface
 
-Improves endpoint compliance and security posture across the org
+Saves IT time and reduces risk from outdated apps
 
-This project was built and tested in a real-world deployment at H2M Architects + Engineers, and is adaptable for use in any modern enterprise leveraging Intune.
+Deployable to thousands of devices with confidence
