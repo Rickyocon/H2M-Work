@@ -20,7 +20,14 @@ if (-not (Test-Path $wingetExe)) {
 Write-Output "Using winget path: $wingetExe"
 
 Write-Output "Pinning Microsoft.Office to prevent auto-upgrade..."
-& $wingetExe pin add --id Microsoft.Office
+try {
+    & $wingetExe pin add --id Microsoft.Office --accept-source-agreements --accept-package-agreements 2>&1 | Tee-Object -Variable pinOutput
+    Write-Output "Pin Output: $pinOutput"
+}
+catch {
+    Write-Output "ERROR during winget pin add: $_"
+}
+
 
 Write-Output "Checking for available winget upgrades..."
 $upgrades = & $wingetExe upgrade
