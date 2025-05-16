@@ -34,7 +34,7 @@ Adds the WinGet executable folder to the System PATH.
 
 Ensures winget.exe is recognized under SYSTEM context (used by Intune).
 
-WingetUpdates-SYSTEM.ps1
+WingetUpdates-SYSTEM folder -> Winget-Proccessing.ps1 and Winget_Upgrade.ps1
 
 Executes winget upgrade --all silently, scoped to system-level packages only.
 
