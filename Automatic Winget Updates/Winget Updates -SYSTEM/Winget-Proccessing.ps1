@@ -5,6 +5,11 @@ Start-Transcript -Path "$LogPath\WingetUpdateScript.log" -Append
 $SupportPath = "C:\Support"
 $AppServerPath = "\\app-server\APPS\_Intune Applications\1 Source\PowerShell\Winget"
 
+# Ensure Support folder exists
+if (-not (Test-Path -Path $SupportPath)) {
+    New-Item -Path $SupportPath -ItemType Directory -Force | Out-Null
+}
+
 # Cleanup
 Remove-Item "$SupportPath\Winget_Update.ps1" -Force -ErrorAction SilentlyContinue
 Remove-Item "$SupportPath\Winget_Update_Detection.txt" -Force -ErrorAction SilentlyContinue
@@ -23,5 +28,4 @@ New-Item -Path "$SupportPath\Winget_Update_Detection.txt" -ItemType File -Force 
 powershell.exe -ExecutionPolicy Bypass -File "C:\Support\Winget_Update.ps1"
 
 Stop-Transcript
-
 
