@@ -40,7 +40,7 @@ Executes winget upgrade --all silently, scoped to system-level packages only.
 
 Does not require any user interaction.
 
-Optional:
+Optional: In Extra Folder
 
 PowerShell7.ps1
 
