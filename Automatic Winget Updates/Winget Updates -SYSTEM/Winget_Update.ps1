@@ -22,6 +22,8 @@ Write-Output "Using winget path: $wingetExe"
 Write-Output "Checking for available winget upgrades..."
 $upgrades = & $wingetExe upgrade --accept-source-agreements --accept-package-agreements
 
+
+#Add Pins Here: & $wingetExe pin add --id "APPS ID"  (To find app ID's -> windows key + R -> cmd -> winget search 'app your looking to pin' -> Youll see the app name and an app ID (or use winget list))
 Write-Output "Pinning Microsoft.Office to prevent auto-upgrade..."
 & $wingetExe pin add --id Microsoft.Office
 
