@@ -28,4 +28,3 @@ New-Item -Path "$SupportPath\Winget_Update_Detection.txt" -ItemType File -Force 
 powershell.exe -ExecutionPolicy Bypass -File "C:\Support\Winget_Update.ps1"
 
 Stop-Transcript
-
