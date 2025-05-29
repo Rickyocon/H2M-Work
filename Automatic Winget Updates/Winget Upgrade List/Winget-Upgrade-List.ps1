@@ -1,5 +1,5 @@
 # Define base log directory (per user)
-$WingetUpgradeListLog = "\\h2m.com\shares\files_shared\WingetUpgradeList"
+$WingetUpgradeListLog = "REPLACE WITH FILE PATH\WingetUpgradeList-user"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $computer = $env:COMPUTERNAME
 $username = $env:USERNAME
@@ -26,13 +26,22 @@ $header = @(
 Set-Content -Path $txtLogFile -Value $header
 Set-Content -Path $csvLogFile -Value $header
 
+# Refresh sources (especially important for msstore-related errors)
+try {
+    winget source update | Out-Null
+    Start-Sleep -Seconds 5  # slight delay to let source refresh settle
+} catch {
+    Write-Output "WARNING: winget source update failed: $_"
+}
+
+
 # Run winget upgrade with interactivity disabled and clean the output
 try {
-    $wingetOutput = winget upgrade --accept-source-agreements --accept-package-agreements 2>&1
+    $wingetOutput = powershell.exe -ExecutionPolicy Bypass winget upgrade --accept-source-agreements --verbose-logs 2>&1
 
     # Remove lines with non-ASCII characters or spinner/progress artifacts
     $cleanOutput = $wingetOutput | Where-Object {
-        $_.Trim() -notin @('-', '\', '|', '') -and ($_ -match '^[\x20-\x7E]+$' -or $_ -eq '')
+        $_.Trim() -ne "" -and ($_ -notmatch "^\s*[-\\|/]+\s*$")
     }
 
     # Append cleaned output to both files
@@ -55,4 +64,3 @@ try {
     Add-Content -Path $txtLogFile -Value $errorMsg
     Add-Content -Path $csvLogFile -Value $errorMsg
 }
-
