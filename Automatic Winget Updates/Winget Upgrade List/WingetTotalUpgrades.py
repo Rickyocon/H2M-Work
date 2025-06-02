@@ -2,7 +2,7 @@ import os
 import re
 
 # 1. Set the root path to the network shared folder
-root_folder = r"\\h2m.com\shares\files_shared\WingetUpgradeList-user"
+root_folder = r"\\.......................\WingetUpgradeList-user"
 
 # 2. Prepare a set to collect unique upgrades (by Id)
 unique_upgrades = {}
