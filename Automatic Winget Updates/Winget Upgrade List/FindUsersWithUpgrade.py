@@ -1,7 +1,7 @@
 import os
 import re
 
-root_folder = r"\\h2m.com\shares\files_shared\WingetUpgradeList-user"
+root_folder = r"\\.....\WingetUpgradeList-user"
 
 # Prompt for the package Id or Name
 search_term = input("Enter the package Id or Name to search for: ").strip().lower()
