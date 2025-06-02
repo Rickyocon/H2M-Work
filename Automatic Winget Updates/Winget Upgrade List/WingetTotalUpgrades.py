@@ -26,10 +26,19 @@ for user_folder in os.listdir(root_folder):
             for line in f:
                 line = line.strip()
                 # Skip header lines or lines with pipes (|) or timestamps
+                lower_line = line.lower()
                 if (
-                    line.startswith("Name |")
-                    or line.startswith("Name Id Version Available Source")
+                    lower_line.startswith("name |")
+                    or lower_line.startswith("name id version available source")
+                    or lower_line.startswith("name | id | version | available | source")
                     or re.match(r"\d{4}-\d{2}-\d{2}", line)
+                    or (
+                        "name" in lower_line and
+                        "id" in lower_line and
+                        "version" in lower_line and
+                        "available" in lower_line and
+                        "source" in lower_line
+                    )
                 ):
                     continue
                 match = upgrade_line_pattern.match(line)
