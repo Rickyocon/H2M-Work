@@ -39,6 +39,8 @@ for user_folder in os.listdir(root_folder):
                         "available" in lower_line and
                         "source" in lower_line
                     )
+                    or "the `msstore` source requires that you view the" in lower_line
+                    or "the source requires the current machine's 2-letter geographic region" in lower_line
                 ):
                     continue
                 match = upgrade_line_pattern.match(line)
