@@ -2,7 +2,7 @@ import os
 import re
 
 # 1. Set the root path to the network shared folder
-root_folder = r"\\.......................\WingetUpgradeList-user"
+root_folder = r"\\h2m.com\shares\files_shared\WingetUpgradeList-user"
 
 # 2. Prepare a set to collect unique upgrades (by Id)
 unique_upgrades = {}
@@ -41,6 +41,7 @@ for user_folder in os.listdir(root_folder):
                     )
                     or "the `msstore` source requires that you view the" in lower_line
                     or "the source requires the current machine's 2-letter geographic region" in lower_line
+                    or "ERROR: Failed to run winget upgrade" in lower_line
                 ):
                     continue
                 match = upgrade_line_pattern.match(line)
