@@ -41,7 +41,7 @@ for user_folder in os.listdir(root_folder):
                     )
                     or "the `msstore` source requires that you view the" in lower_line
                     or "the source requires the current machine's 2-letter geographic region" in lower_line
-                    or "ERROR: Failed to run winget upgrade" in lower_line
+                    or "error: failed to run winget upgrade" in lower_line
                 ):
                     continue
                 match = upgrade_line_pattern.match(line)
