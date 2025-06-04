@@ -1,3 +1,5 @@
+Remove-Item "C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\WingetUpdateUpgradeScript.log" -Force -ErrorAction SilentlyContinue
+
 Start-Transcript -Path "C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\WingetUpdateUpgradeScript.log" -Append
 
 # Resolve path to winget.exe from App Installer package
