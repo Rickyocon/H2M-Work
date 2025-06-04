@@ -25,8 +25,15 @@ for user_folder in os.listdir(root_folder):
         with open(log_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
-                # Skip header lines or lines with pipes (|) or timestamps
                 lower_line = line.lower()
+
+                if (
+                    lower_line.startswith("1 package(s) have pins that prevent upgrade.")
+                    or lower_line.startswith("1 package(s) have version numbers that cannot be determined.")
+                ):
+                    continue
+
+                # Skip header lines or lines with pipes (|) or timestamps
                 if (
                     lower_line.startswith("name |")
                     or lower_line.startswith("name id version available source")
@@ -42,13 +49,15 @@ for user_folder in os.listdir(root_folder):
                     or "the `msstore` source requires that you view the" in lower_line
                     or "the source requires the current machine's 2-letter geographic region" in lower_line
                     or "error: failed to run winget upgrade" in lower_line
+                    or "package(s) have pins that prevent upgrade. use the 'winget pin' command to view and edit pins. using the --include-pinned argument | may | show | more | results." in lower_line
+                    or "package(s) have version numbers that cannot be determined. use --include-unknown | to | see | all | results." in lower_line
                 ):
                     continue
+
                 match = upgrade_line_pattern.match(line)
                 if match:
                     # Use Id as the unique key
                     upgrade_id = match.group("Id")
-                    # Store the tuple (Name, Id, CurrentVersion, AvailableVersion, Source)
                     unique_upgrades[upgrade_id] = (
                         match.group("Name"),
                         upgrade_id,
