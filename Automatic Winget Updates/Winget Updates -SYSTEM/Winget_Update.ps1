@@ -26,8 +26,16 @@ $upgrades = & $wingetExe upgrade --accept-source-agreements --accept-package-agr
 
 
 #Add Pins Here: & $wingetExe pin add --id "APPS ID"  (To find app ID's -> windows key + R -> cmd -> winget search 'app your looking to pin' -> Youll see the app name and an app ID (or use winget list))
+
+
 Write-Output "Pinning Microsoft.Office to prevent auto-upgrade..."
 & $wingetExe pin add --id Microsoft.Office
+
+Write-Output "Pinning Hydrologic Engineering Center RAS to prevent auto-upgrade..."
+& $wingetExe pin add --id HydrologicEngineeringCenter.HEC-RAS
+
+Write-Output "Pinning Hourly Analysis Program 6.0 to prevent auto-upgrade..."
+& $wingetExe pin add --id Carrier.HourlyAnalysisProgram
 
 if ($upgrades -match "No applicable upgrade found") {
     Write-Output "All packages are already up to date."
