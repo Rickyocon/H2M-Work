@@ -79,3 +79,4 @@ with open(output_file, "w", encoding="utf-8") as out:
     # Write each unique upgrade entry
     for entry in sorted(unique_upgrades.values(), key=lambda x: x[0].lower()):
         out.write(f"{entry[0]} | {entry[1]} | {entry[2]} | {entry[3]} | {entry[4]}\n")
+        out.write("\n")
