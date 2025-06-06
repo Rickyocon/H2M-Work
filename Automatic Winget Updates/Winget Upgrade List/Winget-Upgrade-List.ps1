@@ -1,5 +1,5 @@
 # Define base log directory (per user)
-$WingetUpgradeListLog = "\\...........\WingetUpgradeList-user"
+$WingetUpgradeListLog = "\\h2m.com\shares\files_shared\WingetUpgradeList-user"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $computer = $env:COMPUTERNAME
 $username = $env:USERNAME
