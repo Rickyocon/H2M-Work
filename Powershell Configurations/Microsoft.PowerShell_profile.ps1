@@ -669,6 +669,7 @@ Set-PSReadLineKeyHandler -Key Alt+a `
 Set-PSReadLineOption -PredictionSource HistoryAndPlugin
 Set-PSReadLineOption -Colors @{ InlinePrediction = 'Green' }
 Set-PSReadLineOption -EditMode Windows
+set-PSReadLineOption -PredictionViewStyle ListView 
 
 
 # This is an example of a macro that you might use to execute a command.
