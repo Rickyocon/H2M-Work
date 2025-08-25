@@ -1,5 +1,5 @@
 # Define base log directory (per user)
-$WingetUpgradeListLog = ""
+$WingetUpgradeListLog = "PUT PATH HERE"
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $computer = $env:COMPUTERNAME
 $username = $env:USERNAME
@@ -64,4 +64,5 @@ try {
     Add-Content -Path $txtLogFile -Value $errorMsg
     Add-Content -Path $csvLogFile -Value $errorMsg
 }
+
 
