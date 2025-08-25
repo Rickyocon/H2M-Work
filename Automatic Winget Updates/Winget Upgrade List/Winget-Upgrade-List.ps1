@@ -1,5 +1,5 @@
 # Define base log directory (per user)
-$WingetUpgradeListLog = "\\h2m.com\shares\files_shared\WingetUpgradeList-user"
+$WingetUpgradeListLog = ""
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $computer = $env:COMPUTERNAME
 $username = $env:USERNAME
@@ -64,3 +64,4 @@ try {
     Add-Content -Path $txtLogFile -Value $errorMsg
     Add-Content -Path $csvLogFile -Value $errorMsg
 }
+
