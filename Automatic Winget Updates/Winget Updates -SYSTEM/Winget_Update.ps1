@@ -1,6 +1,6 @@
 # Set local and network log paths
 $localLog = "C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\WingetUpdateUpgradeScript.log"
-$networkRoot = "\\h2m.com\shares\files_shared\WingetUpateUserLogs"
+$networkRoot = "\\app-server\APPS\Winget\Update-Logs"
 $userName = $env:USERNAME
 $userFolder = Join-Path $networkRoot $userName
 $networkLog = Join-Path $userFolder "WingetUpdateUpgradeScript.log"
