@@ -212,6 +212,18 @@
         color: #9aa4b2;
         margin-top: 10px;
       }
+      /* Urgent red warning shown at the bottom of the overlay box */
+      .urgent-warning {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 8px;
+        background: rgba(255, 230, 230, 0.98);
+        border-left: 6px solid #b30000;
+        color: #7a0000;
+        font-weight: 800;
+        font-size: 15px;
+        box-shadow: 0 6px 18px rgba(183, 30, 30, 0.08);
+      }
       button:focus {
         outline: 3px solid #9cc8ff;
         outline-offset: 2px;
@@ -386,10 +398,18 @@
           >.
         </p>
       </div>
-
       <footer>
-        <span>Contact your security team for help.</span>
+        <span
+          >By completing this training you help create a safer work environment,
+          reduce the risk of data breaches, and protect company assets.</span
+        >
       </footer>
+      <br />
+      <div class="urgent-warning" role="alert" aria-live="assertive">
+        IT has been notified that you just clicked a phishing test and your
+        device access will be removed. To stop that from happening, contact IT
+        immediately.
+      </div>
     </main>
 
     <div
@@ -415,13 +435,6 @@
           >
             Start Training
           </a>
-          <button
-            class="btn btn-secondary"
-            id="overlayExit"
-            aria-label="Exit simulation"
-          >
-            I completed training already
-          </button>
         </div>
         <div class="small-note">
           If you cannot complete training contact IT at the address on the main
