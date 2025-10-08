@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Security Training Required</title>
+    <style>
+      :root {
+        font-family: Inter, system-ui, Segoe UI, Arial, sans-serif;
+        line-height: 1.4;
+        --h2m-green: #9da951;
+        --h2m-grey: #595b5a;
+        --h2m-blue: #608399;
+        --h2m-blue-dark: #4f6f80;
+        --h2m-accent: var(--h2m-green);
+        --primary: var(--h2m-green);
+        --primary-dark: #8b9942;
+        --secondary: var(--h2m-blue);
+        --muted: var(--h2m-grey);
+        --card-bg-top: #0f1724;
+        --card-bg-bottom: #0b1220;
+      }
+      body {
+        margin: 0;
+        background: #f3f5ef;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .card {
+        width: 1150px;
+        max-width: 98%;
+        min-height: 70vh;
+        background: #fbfbf7;
+        color: #0b1a12;
+        border-radius: 12px;
+        padding: 36px;
+        box-shadow: 0 12px 32px rgba(28, 34, 24, 0.08);
+        border: 1px solid rgba(89, 91, 90, 0.06);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        position: relative;
+        line-height: 1.6;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: relative;
+        justify-content: center;
+      }
+      .logo {
+        width: 75px;
+        height: auto;
+        background: transparent;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-weight: 700;
+        position: absolute;
+        left: 10px;
+        top: -30px;
+        z-index: 6;
+      }
+      .logo img {
+        max-width: 200%;
+        height: auto;
+        max-height: 120px;
+        object-fit: contain;
+        display: block;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        color: var(--primary-dark);
+      }
+      p.lead {
+        margin: 12px 0 20px;
+        font-size: 17px;
+        color: #233226;
+      }
+      .why {
+        background: linear-gradient(
+          90deg,
+          rgba(157, 169, 81, 0.06),
+          rgba(96, 131, 153, 0.01)
+        );
+        border-left: 6px solid var(--primary);
+        padding: 18px;
+        border-radius: 8px;
+        color: #163214;
+        font-size: 15px;
+      }
+      .actions {
+        display: flex;
+        gap: 18px;
+        margin-top: 22px;
+      }
+      .btn {
+        padding: 14px 20px;
+        border-radius: 8px;
+        border: 0;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: #ffffff;
+        transition: background 160ms ease, transform 120ms ease;
+      }
+      .btn-primary:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+      }
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--secondary);
+        border: 1px solid rgba(96, 131, 153, 0.12);
+      }
+      .btn-secondary:hover {
+        background: rgba(96, 131, 153, 0.04);
+      }
+      footer {
+        margin-top: 14px;
+        font-size: 13px;
+        color: var(--muted);
+        padding-bottom: 8px;
+      }
+
+      .contact {
+        margin-top: 22px;
+        padding: 16px 18px;
+        border-radius: 8px;
+        background: rgba(157, 169, 81, 0.04);
+        border-left: 6px solid var(--primary);
+        color: #163214;
+      }
+      .contact h3 {
+        margin: 0 0 8px 0;
+        color: #163214;
+        font-size: 18px;
+      }
+      .contact a {
+        color: var(--primary);
+        text-decoration: underline;
+      }
+      a {
+        color: var(--primary);
+      }
+      .small-note {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 10px;
+      }
+      button:focus {
+        outline: 3px solid rgba(157, 169, 81, 0.18);
+        outline-offset: 2px;
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        color: #111;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 24px;
+      }
+      .overlay .box {
+        max-width: 960px;
+        width: 90%;
+        text-align: left;
+        background: #fbfbf7;
+        padding: 26px;
+        border-radius: 10px;
+        border: 1px solid rgba(89, 91, 90, 0.06);
+      }
+      .overlay h2 {
+        margin: 0 0 14px;
+        font-size: 24px;
+        color: var(--primary-dark);
+      }
+      .overlay p {
+        margin: 12px 0 20px;
+        color: #233226;
+        font-size: 17px;
+      }
+      .overlay .controls {
+        display: flex;
+        gap: 10px;
+      }
+      .overlay .btn-primary {
+        background: var(--primary);
+        color: #163214;
+      }
+      .overlay .btn-secondary {
+        border-color: rgba(96, 131, 153, 0.12);
+        color: var(--secondary);
+      }
+      .small-note {
+        font-size: 13px;
+        color: #9aa4b2;
+        margin-top: 10px;
+      }
+      button:focus {
+        outline: 3px solid #9cc8ff;
+        outline-offset: 2px;
+      }
+      .attention {
+        position: absolute;
+        top: -90px;
+        left: 34px;
+        right: 34px;
+        background: linear-gradient(
+          90deg,
+          rgba(157, 169, 81, 0.12),
+          rgba(96, 131, 153, 0.06)
+        );
+        border: 3px solid var(--primary);
+        color: #1b2b1b;
+        padding: 10px 14px;
+        border-radius: 8px;
+        display: flex; /* visible by default, sits on top of the card */
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        box-shadow: 0 8px 30px rgba(157, 169, 81, 0.12);
+        transform-origin: center;
+        z-index: 20;
+        animation: banner-pulse 1s infinite ease-in-out;
+      }
+      .attention .attention-icon {
+        font-size: 20px;
+      }
+      @keyframes banner-pulse {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 8px 30px rgba(157, 169, 81, 0.12);
+        }
+        50% {
+          transform: scale(1.03) rotate(0deg);
+          box-shadow: 0 14px 40px rgba(157, 169, 81, 0.18);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 8px 30px rgba(157, 169, 81, 0.12);
+        }
+      }
+      .card.attention-on {
+        /* When the card has this class it will play the shake animation once. */
+        animation: card-shake 0.9s ease-in-out 1;
+      }
+      /* Only keep the shake animation to reduce complexity */
+      .anim-shake {
+        animation: card-shake 0.9s ease-in-out 1;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .anim-shake {
+          animation: none !important;
+        }
+      }
+      @keyframes card-shake {
+        0% {
+          transform: translateY(0);
+        }
+        20% {
+          transform: translateY(-6px) rotate(-0.5deg);
+        }
+        40% {
+          transform: translateY(4px) rotate(0.5deg);
+        }
+        60% {
+          transform: translateY(-3px) rotate(-0.3deg);
+        }
+        80% {
+          transform: translateY(2px) rotate(0.2deg);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card" id="mainCard">
+      <div
+        class="attention"
+        id="attentionBanner"
+        role="status"
+        aria-live="assertive"
+      >
+        <span class="attention-icon">⚠️</span>
+        <div class="attention-text">
+          <strong>YOU CLICKED A SIMULATED PHISHING LINK</strong><br />Complete
+          the training now to restore access
+        </div>
+      </div>
+      <header>
+        <div class="logo" aria-hidden="false">
+          <img
+            src="https://scontent-lga3-1.xx.fbcdn.net/v/t39.30808-6/277747367_661421478459745_4260859059490424101_n.png?_nc_cat=103&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=PirVyOGdePEQ7kNvwH3IOca&_nc_oc=AdkDog9OHs_gMUC06sRcstGFeLBb4Ak3gjhdKpXGwxGWG5kunhTHChA5wFuK94eFfWM&_nc_zt=23&_nc_ht=scontent-lga3-1.xx&_nc_gid=9b2RQ_c7JxWxLFjtfBJnAQ&oh=00_AfehkJ-TNsWZheq3i54U9H2UR1mGCvP4y14mmJmNNgix8g&oe=68EC58A0"
+            alt="H2M logo"
+          />
+        </div>
+
+        <div
+          style="
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: -30px;
+          "
+        >
+          <h1>Security Awareness Test Result</h1>
+          <p class="lead">
+            You clicked a simulated phishing link during a company security
+            test.
+          </p>
+        </div>
+      </header>
+
+      <section class="why" aria-live="polite">
+        <strong>Why this matters</strong>
+        <p>
+          Phishing is the leading cause of account compromise and ransomware
+          incidents. Clicking unknown links can expose credentials and allow
+          attackers on the network.
+        </p>
+      </section>
+
+      <div
+        style="
+          display: flex;
+          gap: 20px;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 18px;
+          flex-wrap: wrap;
+        "
+      >
+        <div>
+          <p>
+            <strong>Required action:</strong> Complete the mandatory security
+            training now or your computer will be taken off the network. Your
+            completion will be recorded.
+          </p>
+          <div class="actions">
+            <button class="btn btn-primary" id="startTraining">
+              Start Training
+            </button>
+          </div>
+          <div class="small-note">
+            If the training isn’t yet assigned when you access the training
+            portal, please wait for an email from IT with the link to your
+            course.
+          </div>
+        </div>
+      </div>
+
+      <div class="contact" aria-live="polite">
+        <h3>If you have any questions or need assistance</h3>
+        <p style="margin: 6px 0 0">
+          Contact IT:
+          <strong
+            ><a href="mailto:helpdesk@h2m.com">helpdesk@h2m.com</a></strong
+          >
+          or call <strong><a href="tel:631-392-5000">631-392-5000</a></strong
+          >. To submit a support ticket, visit
+          <a
+            href="https://h2m.freshservice.com/support/home"
+            target="_blank"
+            rel="noopener"
+            >H2M HelpDesk</a
+          >.
+        </p>
+      </div>
+
+      <footer>
+        <span>Contact your security team for help.</span>
+      </footer>
+    </main>
+
+    <div
+      class="overlay"
+      id="overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div class="box">
+        <h2>Security Test: Action Required</h2>
+        <p>
+          For your security you must complete the assigned training. Click
+          "Start Training" to proceed.
+        </p>
+        <div class="controls">
+          <a
+            class="btn btn-primary"
+            id="overlayStart"
+            href="https://training.knowbe4.com/ui/login?logout=true"
+            target="_blank"
+            rel="noopener"
+          >
+            Start Training
+          </a>
+          <button
+            class="btn btn-secondary"
+            id="overlayExit"
+            aria-label="Exit simulation"
+          >
+            I completed training already
+          </button>
+        </div>
+        <div class="small-note">
+          If you cannot complete training contact IT at the address on the main
+          page.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const TRAINING_URL = "https://training.knowbe4.com/ui/login?logout=true";
+
+      function logEvent() {}
+
+      const overlay = document.getElementById("overlay");
+      const mainCard = document.getElementById("mainCard");
+      const startTraining = document.getElementById("startTraining");
+      const overlayStart = document.getElementById("overlayStart");
+      const overlayExit = document.getElementById("overlayExit");
+
+      function showOverlay() {
+        overlay.style.display = "flex";
+        overlay.setAttribute("aria-hidden", "false");
+        // add attention/shake class to the card so it animates when overlay opens
+        mainCard.classList.add("attention-on");
+        logEvent("overlay_shown");
+        try {
+          const el = document.documentElement;
+          const request =
+            el.requestFullscreen ||
+            el.webkitRequestFullscreen ||
+            el.msRequestFullscreen;
+          if (
+            request &&
+            !document.fullscreenElement &&
+            !document.webkitFullscreenElement &&
+            !document.msFullscreenElement
+          ) {
+            request.call(el).catch(() => {});
+          }
+        } catch (err) {}
+      }
+
+      function exitFullScreen() {
+        try {
+          const exit =
+            document.exitFullscreen ||
+            document.webkitExitFullscreen ||
+            document.msExitFullscreen;
+          if (
+            exit &&
+            (document.fullscreenElement ||
+              document.webkitFullscreenElement ||
+              document.msFullscreenElement)
+          ) {
+            exit.call(document).catch(() => {});
+          }
+        } catch (err) {}
+      }
+
+      // Show overlay when clicking anywhere on the document except on interactive elements.
+      document.addEventListener("click", (e) => {
+        // If the overlay is already visible, don't reopen it.
+        if (overlay.style.display === "flex") return;
+
+        // Ignore clicks on interactive controls: links, buttons, inputs, or inside the overlay box.
+        const ignoredTags = [
+          "A",
+          "BUTTON",
+          "INPUT",
+          "SELECT",
+          "TEXTAREA",
+          "LABEL",
+        ];
+        let el = e.target;
+        while (el && el !== document.documentElement) {
+          if (ignoredTags.includes(el.tagName)) return; // clicked a control
+          if (el.id === "overlay" || el.classList.contains("box")) return; // clicked overlay area
+          el = el.parentElement;
+        }
+
+        // Otherwise, treat as clicking the page background and show overlay
+        showOverlay();
+      });
+
+      startTraining.addEventListener("click", () => {
+        // ensure training opens in a new tab
+        window.open(TRAINING_URL, "_blank", "noopener");
+      });
+
+      overlayExit.addEventListener("click", () => {
+        exitFullScreen();
+        overlay.style.display = "none";
+        overlay.setAttribute("aria-hidden", "true");
+        // remove attention class so the card returns to normal
+        mainCard.classList.remove("attention-on");
+        logEvent("overlay_dismissed");
+      });
+
+      document.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape" && overlay.style.display === "flex") {
+          exitFullScreen();
+          overlay.style.display = "none";
+          overlay.setAttribute("aria-hidden", "true");
+          mainCard.classList.remove("attention-on");
+          logEvent("overlay_dismissed_escape");
+        }
+      });
+
+      if (overlayStart) {
+        overlayStart.addEventListener("click", () => {
+          exitFullScreen();
+          overlay.style.display = "none";
+          overlay.setAttribute("aria-hidden", "true");
+          mainCard.classList.remove("attention-on");
+          logEvent("overlay_start_clicked");
+        });
+      }
+
+      // Clean up animation class after animation ends (so it can re-play on next open)
+      mainCard.addEventListener("animationend", (ev) => {
+        if (ev.animationName === "card-shake") {
+          mainCard.classList.remove("attention-on");
+        }
+      });
+    </script>
+  </body>
+</html>
