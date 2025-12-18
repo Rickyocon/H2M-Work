@@ -1,4 +1,4 @@
-New-Item -Path "$SupportPath\JunkAppendForSafeSenders" -ItemType Directory -Force | Out-Null
+New-Item -Path "C:\Support\JunkAppendForSafeSenders" -ItemType Directory -Force | Out-Null
 Copy-Item -Path "\\app-server\APPS\_Intune Applications\1 Source\PowerShell\SafeSenders\JunkAppend\junkmailimportlistsAppendValueToOneDetection.txt" -Destination "C:\Support\JunkAppendForSafeSenders\junkmailimportlistsAppendValueToOneDetection.txt" -Force
 
 # 1. Map the HKEY_USERS hive so PowerShell can see it
