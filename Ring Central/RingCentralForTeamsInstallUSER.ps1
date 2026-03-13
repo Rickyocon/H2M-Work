@@ -23,7 +23,6 @@ winget install `
     --exact `
     --accept-package-agreements `
     --accept-source-agreements `
-    --silent
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Installation completed successfully."
