@@ -1,4 +1,8 @@
-$localLog = "C:\Support\RingCentral\RingCentralForTeamsInstall.log"
+$logDir = "C:\Support\RingCentral"
+$localLog = "$logDir\RingCentralForTeamsInstall.log"
+
+New-Item -Path $logDir -ItemType Directory -Force | Out-Null
+
 Start-Transcript -Path $localLog -Append
 
 # Install RingCentral Teams Desktop Plugin via winget
