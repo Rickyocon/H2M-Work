@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laptop Deployment Checklist</title>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap%22 rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F2EE;
+    --surface: #FFFFFF;
+    --surface2: #F0EEE9;
+    --border: #D8D4CC;
+    --border-strong: #B0AA9F;
+    --text: #1A1916;
+    --text-muted: #6B6760;
+    --text-faint: #A09C97;
+    --accent: #1D6B4A;
+    --accent-bg: #E8F4EE;
+    --accent-border: #7DC4A0;
+    --danger: #8B2C2C;
+    --danger-bg: #F7EDED;
+    --info-bg: #EBF3FB;
+    --info-border: #90BDE0;
+    --info-text: #1A4A72;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+ 
+  .app { display: flex; min-height: 100vh; }
+ 
+  /* Sidebar */
+  .sidebar { width: 280px; min-width: 280px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow: hidden; }
+  .sidebar-header { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-header h1 { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .new-hire-btn { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 8px 12px; font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .new-hire-btn:hover { background: #155a3c; }
+  .new-hire-btn:disabled { background: #7aab93; cursor: not-allowed; }
+  .hire-list { flex: 1; overflow-y: auto; padding: 8px 10px; }
+  .hire-item { display: flex; align-items: center; border-radius: var(--radius); margin-bottom: 2px; cursor: pointer; transition: background 0.1s; overflow: hidden; }
+  .hire-item:hover { background: var(--surface2); }
+  .hire-item.active { background: var(--accent-bg); }
+  .hire-item-inner { flex: 1; padding: 8px 10px; min-width: 0; }
+  .hire-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hire-item.active .hire-name { color: var(--accent); }
+  .hire-meta { font-size: 11px; color: var(--text-faint); font-family: var(--mono); margin-top: 1px; }
+  .hire-progress-bar { height: 3px; background: var(--border); border-radius: 99px; margin-top: 5px; overflow: hidden; }
+  .hire-progress-fill { height: 3px; background: var(--accent); border-radius: 99px; transition: width 0.3s; }
+  .hire-del { padding: 6px 8px; background: transparent; border: none; cursor: pointer; color: var(--text-faint); font-size: 14px; border-radius: var(--radius); opacity: 0; transition: opacity 0.15s, color 0.15s; flex-shrink: 0; }
+  .hire-item:hover .hire-del { opacity: 1; }
+  .hire-del:hover { color: var(--danger); }
+  .empty-state { text-align: center; padding: 32px 16px; color: var(--text-faint); font-size: 13px; line-height: 1.7; }
+  .sidebar-footer { padding: 12px 18px; border-top: 1px solid var(--border); }
+  .auth-status { font-size: 11px; color: var(--text-faint); font-family: var(--mono); margin-bottom: 6px; }
+  .auth-btn { width: 100%; font-size: 12px; color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 10px; background: transparent; cursor: pointer; font-family: var(--sans); transition: background 0.15s; }
+  .auth-btn:hover { background: var(--surface2); }
+ 
+  /* Main */
+  .main { flex: 1; overflow-y: auto; padding: 32px 40px; max-width: 820px; }
+  .no-hire { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; color: var(--text-faint); text-align: center; gap: 8px; }
+  .no-hire .icon { font-size: 48px; margin-bottom: 8px; }
+  .no-hire h2 { font-size: 16px; font-weight: 500; color: var(--text-muted); }
+  .no-hire p { font-size: 13px; }
+ 
+  .hire-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; gap: 16px; }
+  .hire-title-wrap { flex: 1; }
+  .hire-title { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .hire-subtitle { font-size: 13px; color: var(--text-muted); font-family: var(--mono); }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .btn { border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); border-radius: var(--radius); padding: 6px 12px; font-family: var(--sans); font-size: 13px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+  .btn:hover { background: var(--surface2); border-color: var(--border-strong); }
+  .btn.danger:hover { background: var(--danger-bg); border-color: #d08080; color: var(--danger); }
+ 
+  .progress-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; }
+  .progress-stats { flex: 1; }
+  svg.ring { display: block; }
+  .progress-fraction { font-family: var(--mono); font-size: 24px; font-weight: 500; color: var(--text); }
+  .progress-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .phase-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .phase-pill { font-size: 11px; font-family: var(--mono); border-radius: 99px; padding: 3px 10px; border: 1px solid var(--border); color: var(--text-muted); background: var(--surface2); }
+  .phase-pill.done { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent); }
+ 
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; }
+  .section-header { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: background 0.1s; }
+  .section-header:hover { background: var(--surface2); }
+  .section.open .section-header { border-bottom-color: var(--border); }
+  .section-num { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--text-faint); width: 20px; }
+  .section-title { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+  .section-badge { font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .section-badge.done { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-border); }
+  .chevron { font-size: 10px; color: var(--text-faint); transition: transform 0.2s; }
+  .section.open .chevron { transform: rotate(90deg); }
+  .section-body { display: none; }
+  .section.open .section-body { display: block; }
+  .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 16px 10px 48px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .check-item:last-child { border-bottom: none; }
+  .check-item:hover { background: var(--surface2); }
+  .check-item input[type="checkbox"] { margin-top: 1px; width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+  .check-text { flex: 1; }
+  .check-label { font-size: 13px; color: var(--text); line-height: 1.45; }
+  .check-label.done { text-decoration: line-through; color: var(--text-faint); }
+  .check-note { font-size: 11px; color: var(--text-faint); font-family: var(--mono); margin-top: 2px; line-height: 1.5; }
+ 
+  .notes-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-top: 12px; overflow: hidden; }
+  .notes-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+  .notes-header span { font-family: var(--mono); font-size: 11px; }
+  textarea.notes { width: 100%; border: none; outline: none; resize: vertical; font-family: var(--mono); font-size: 12px; color: var(--text); background: var(--surface); padding: 14px 16px; min-height: 90px; line-height: 1.6; }
+ 
+  .complete-banner { background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+ 
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(20,18,14,0.45); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 460px; max-width: 95vw; box-shadow: 0 8px 40px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .modal-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; font-family: var(--mono); }
+ 
+  /* User search */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px 9px 34px; font-family: var(--sans); font-size: 13px; color: var(--text); background: var(--surface); outline: none; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-faint); font-size: 14px; pointer-events: none; }
+  .search-results { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; max-height: 220px; overflow-y: auto; display: none; }
+  .search-results.visible { display: block; }
+  .search-result-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--accent-bg); }
+  .result-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--info-bg); border: 1px solid var(--info-border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--info-text); flex-shrink: 0; }
+  .result-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .result-meta { font-size: 11px; color: var(--text-faint); font-family: var(--mono); }
+  .search-hint { font-size: 12px; color: var(--text-faint); text-align: center; padding: 16px; }
+ 
+  /* Selected user card */
+  .selected-user { background: var(--accent-bg); border: 1px solid var(--accent-border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px; display: none; }
+  .selected-user.visible { display: flex; align-items: center; gap: 12px; }
+  .selected-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #fff; flex-shrink: 0; }
+  .selected-info { flex: 1; min-width: 0; }
+  .selected-name { font-size: 13px; font-weight: 500; color: var(--accent); }
+  .selected-detail { font-size: 11px; color: var(--text-muted); font-family: var(--mono); margin-top: 1px; }
+  .selected-clear { background: transparent; border: none; cursor: pointer; color: var(--accent); font-size: 16px; padding: 2px 4px; }
+ 
+  .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text { font-size: 11px; color: var(--text-faint); font-family: var(--mono); }
+ 
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--mono); }
+  .field input, .field select { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; font-family: var(--sans); font-size: 13px; color: var(--text); background: var(--surface); outline: none; transition: border-color 0.15s; }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field input.prefilled { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent); }
+ 
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 8px 16px; font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-primary:hover { background: #155a3c; }
+ 
+  .info-banner { background: var(--info-bg); border: 1px solid var(--info-border); border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: var(--info-text); margin-bottom: 16px; line-height: 1.6; }
+  .info-banner strong { font-weight: 600; }
+ 
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+ 
+  @media (max-width: 700px) {
+    .sidebar { width: 220px; min-width: 220px; }
+    .main { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+ 
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>H2M // IT</h1>
+      <button class="new-hire-btn" id="new-hire-btn" onclick="openNewHireModal()">
+        <span>+</span> New hire
+      </button>
+    </div>
+    <div class="hire-list" id="hire-list"></div>
+    <div class="sidebar-footer">
+      <div class="auth-status" id="auth-status">Not signed in</div>
+      <button class="auth-btn" id="auth-btn" onclick="toggleAuth()">Sign in to enable user search</button>
+    </div>
+  </aside>
+ 
+  <main class="main" id="main">
+    <div class="no-hire">
+      <div class="icon">&#128187;</div>
+      <h2>No hire selected</h2>
+      <p>Create a new hire record to begin a<br>laptop deployment checklist.</p>
+    </div>
+  </main>
+</div>
+ 
+<!-- New Hire Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>New hire deployment</h2>
+    <p class="modal-subtitle">Search your Entra tenant or fill in manually</p>
+ 
+    <!-- Auth required banner (shown when not signed in) -->
+    <div class="info-banner" id="auth-banner" style="display:none">
+      <strong>Sign in to search Entra users.</strong> Use the button in the sidebar to authenticate,
+      then re-open this dialog to search your tenant. Or fill in the fields manually below.
+    </div>
+ 
+    <!-- User search (shown when signed in) -->
+    <div id="search-section" style="display:none">
+      <div class="search-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" class="search-input" id="user-search" placeholder="Search by name or email..." autocomplete="off" oninput="onSearchInput(this.value)">
+      </div>
+      <div class="search-results" id="search-results">
+        <div class="search-hint" id="search-hint">Type at least 2 characters to search</div>
+      </div>
+      <div class="selected-user" id="selected-user">
+        <div class="selected-avatar" id="selected-avatar"></div>
+        <div class="selected-info">
+          <div class="selected-name" id="selected-name"></div>
+          <div class="selected-detail" id="selected-detail"></div>
+        </div>
+        <button class="selected-clear" onclick="clearSelectedUser()" title="Clear">&#10005;</button>
+      </div>
+      <div class="divider">
+        <div class="divider-line"></div>
+        <div class="divider-text">or fill in manually</div>
+        <div class="divider-line"></div>
+      </div>
+    </div>
+ 
+    <div class="field">
+      <label>Full name</label>
+      <input type="text" id="m-name" placeholder="Jane Smith" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>UPN / Email</label>
+      <input type="text" id="m-upn" placeholder="jsmith@H2M.com" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Department</label>
+      <input type="text" id="m-dept" placeholder="MLS Operations" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Job title</label>
+      <input type="text" id="m-title" placeholder="Data Analyst" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Start date</label>
+      <input type="date" id="m-start">
+    </div>
+    <div class="field">
+      <label>Laptop model / asset tag</label>
+      <input type="text" id="m-asset" placeholder="Dell Latitude 5540 / OKM-042" autocomplete="off">
+    </div>
+ 
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="createHire()">Create checklist</button>
+    </div>
+  </div>
+</div>
+ 
+<script>
+// ============================================================
+// CONFIG -- update CLIENT_ID and TENANT_ID to match your tenant
+// Then add the redirect URI below to your app registration:
+//   Azure Portal > Entra ID > App Registrations > [your app]
+//   > Authentication > Add platform > Single-page application
+//   > Redirect URI: the file:// path to this file
+//   (e.g. file:///C:/IT/laptop-deployment-checklist.html)
+// Required Graph API scopes to grant (Delegated):
+//   User.ReadBasic.All  (search users)
+// ============================================================
+const CLIENT_ID = 'ENTER_MIRCOSOFT_GRAPH_CLIENT_ID';
+const TENANT_ID = 'ENTER_MIRCOSOFT_TENANT_ID';
+ 
+// ============================================================
+ 
+const msalConfig = {
+  auth: {
+    clientId: CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+    redirectUri: window.location.href.split('?')[0].split('#')[0],
+  },
+  cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
+};
+ 
+const GRAPH_SCOPES = ['User.ReadBasic.All'];
+let msalInstance = null;
+let currentAccount = null;
+let searchTimer = null;
+let selectedGraphUser = null;
+ 
+// Init MSAL
+async function initMsal() {
+  try {
+    msalInstance = new msal.PublicClientApplication(msalConfig);
+    await msalInstance.initialize();
+    await msalInstance.handleRedirectPromise();
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      currentAccount = accounts[0];
+      updateAuthUI();
+    }
+  } catch(e) {
+    console.warn('MSAL init error:', e);
+  }
+}
+ 
+async function toggleAuth() {
+  if (currentAccount) {
+    await msalInstance.logoutPopup({ account: currentAccount });
+    currentAccount = null;
+    updateAuthUI();
+  } else {
+    await signIn();
+  }
+}
+ 
+async function signIn() {
+  if (!msalInstance) return;
+  try {
+    document.getElementById('auth-btn').innerHTML = '<span class="spinner"></span>Signing in...';
+    const result = await msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
+    currentAccount = result.account;
+    updateAuthUI();
+  } catch(e) {
+    console.warn('Login error:', e);
+    document.getElementById('auth-btn').textContent = 'Sign in to enable user search';
+  }
+}
+ 
+function updateAuthUI() {
+  const statusEl = document.getElementById('auth-status');
+  const btnEl = document.getElementById('auth-btn');
+  if (currentAccount) {
+    statusEl.textContent = 'Signed in: ' + currentAccount.username;
+    btnEl.textContent = 'Sign out';
+  } else {
+    statusEl.textContent = 'Not signed in';
+    btnEl.textContent = 'Sign in to enable user search';
+  }
+  // Update modal search section if open
+  updateModalAuthState();
+}
+ 
+function updateModalAuthState() {
+  const searchSection = document.getElementById('search-section');
+  const authBanner = document.getElementById('auth-banner');
+  if (currentAccount) {
+    searchSection.style.display = 'block';
+    authBanner.style.display = 'none';
+  } else {
+    searchSection.style.display = 'none';
+    authBanner.style.display = 'block';
+  }
+}
+ 
+async function getGraphToken() {
+  if (!msalInstance || !currentAccount) return null;
+  try {
+    const result = await msalInstance.acquireTokenSilent({
+      scopes: GRAPH_SCOPES,
+      account: currentAccount
+    });
+    return result.accessToken;
+  } catch(e) {
+    try {
+      const result = await msalInstance.acquireTokenPopup({ scopes: GRAPH_SCOPES });
+      currentAccount = result.account;
+      return result.accessToken;
+    } catch(e2) {
+      return null;
+    }
+  }
+}
+ 
+// User search
+function onSearchInput(val) {
+  clearTimeout(searchTimer);
+  const resultsEl = document.getElementById('search-results');
+  const hintEl = document.getElementById('search-hint');
+ 
+  if (val.length < 2) {
+    resultsEl.classList.remove('visible');
+    return;
+  }
+ 
+  hintEl.textContent = 'Searching...';
+  resultsEl.innerHTML = '';
+  resultsEl.appendChild(hintEl);
+  resultsEl.classList.add('visible');
+ 
+  searchTimer = setTimeout(() => searchUsers(val), 350);
+}
+ 
+async function searchUsers(query) {
+  const token = await getGraphToken();
+  if (!token) return;
+ 
+  const resultsEl = document.getElementById('search-results');
+  const hintEl = document.getElementById('search-hint');
+ 
+  try {
+    const filter = `startsWith(displayName,'${query.replace(/'/g,"''")}') or startsWith(userPrincipalName,'${query.replace(/'/g,"''")}') or startsWith(givenName,'${query.replace(/'/g,"''")}') or startsWith(surname,'${query.replace(/'/g,"''")}')`;
+    const url = `https://graph.microsoft.com/v1.0/users?$filter=${encodeURIComponent(filter)}&$select=id,displayName,userPrincipalName,department,jobTitle,officeLocation,employeeHireDate&$top=10`;
+ 
+    const res = await fetch(url, {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    const data = await res.json();
+ 
+    if (!data.value || data.value.length === 0) {
+      hintEl.textContent = 'No users found';
+      resultsEl.innerHTML = '';
+      resultsEl.appendChild(hintEl);
+      return;
+    }
+ 
+    resultsEl.innerHTML = data.value.map(u => {
+      const initials = getInitials(u.displayName);
+      return `<div class="search-result-item" onclick="selectUser(${JSON.stringify(JSON.stringify(u))})">
+        <div class="result-avatar">${initials}</div>
+        <div>
+          <div class="result-name">${esc(u.displayName)}</div>
+          <div class="result-meta">${esc(u.userPrincipalName)}${u.department ? ' &bull; ' + esc(u.department) : ''}${u.jobTitle ? ' &bull; ' + esc(u.jobTitle) : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+ 
+  } catch(e) {
+    hintEl.textContent = 'Search failed. Check console for details.';
+    resultsEl.innerHTML = '';
+    resultsEl.appendChild(hintEl);
+    console.error('Graph search error:', e);
+  }
+}
+ 
+function selectUser(jsonStr) {
+  const u = JSON.parse(jsonStr);
+  selectedGraphUser = u;
+ 
+  // Hide search, show selected card
+  document.getElementById('search-results').classList.remove('visible');
+  document.getElementById('user-search').value = '';
+ 
+  document.getElementById('selected-avatar').textContent = getInitials(u.displayName);
+  document.getElementById('selected-name').textContent = u.displayName;
+  const detail = [u.jobTitle, u.department].filter(Boolean).join(' | ');
+  document.getElementById('selected-detail').textContent = detail || u.userPrincipalName;
+  document.getElementById('selected-user').classList.add('visible');
+ 
+  // Pre-fill fields
+  setFieldPrefilled('m-name', u.displayName);
+  setFieldPrefilled('m-upn', u.userPrincipalName);
+  setFieldPrefilled('m-dept', u.department || '');
+  setFieldPrefilled('m-title', u.jobTitle || '');
+ 
+  // Start date from employeeHireDate if available
+  if (u.employeeHireDate) {
+    const d = new Date(u.employeeHireDate);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    setFieldPrefilled('m-start', `${yyyy}-${mm}-${dd}`);
+  }
+}
+ 
+function setFieldPrefilled(id, val) {
+  const el = document.getElementById(id);
+  el.value = val;
+  if (val) el.classList.add('prefilled');
+  else el.classList.remove('prefilled');
+}
+ 
+function clearSelectedUser() {
+  selectedGraphUser = null;
+  document.getElementById('selected-user').classList.remove('visible');
+  ['m-name','m-upn','m-dept','m-title','m-start'].forEach(id => {
+    document.getElementById(id).value = '';
+    document.getElementById(id).classList.remove('prefilled');
+  });
+}
+ 
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+  return name.slice(0,2).toUpperCase();
+}
+ 
+// Modal
+function openNewHireModal() {
+  clearSelectedUser();
+  ['m-name','m-upn','m-dept','m-title','m-asset'].forEach(id => {
+    document.getElementById(id).value = '';
+    document.getElementById(id).classList.remove('prefilled');
+  });
+  document.getElementById('m-start').value = '';
+  document.getElementById('user-search').value = '';
+  document.getElementById('search-results').classList.remove('visible');
+  updateModalAuthState();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => {
+    const el = currentAccount ? document.getElementById('user-search') : document.getElementById('m-name');
+    el.focus();
+  }, 80);
+}
+ 
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+ 
+function createHire() {
+  const name = document.getElementById('m-name').value.trim();
+  if (!name) { alert('Please enter a name.'); return; }
+  const id = 'h' + Date.now() + Math.random().toString(36).slice(2,6);
+  db[id] = {
+    name,
+    upn: document.getElementById('m-upn').value.trim(),
+    dept: document.getElementById('m-dept').value.trim(),
+    jobTitle: document.getElementById('m-title').value.trim(),
+    start: document.getElementById('m-start').value,
+    asset: document.getElementById('m-asset').value.trim(),
+    entraId: selectedGraphUser?.id || null,
+    checks: {},
+    open: {},
+    notes: '',
+    created: Date.now()
+  };
+  save();
+  activeId = id;
+  closeModal();
+  renderSidebar();
+  renderMain();
+}
+ 
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) {
+    if (document.activeElement.id !== 'user-search') createHire();
+  }
+});
+ 
+// ============================================================
+// Checklist data
+// ============================================================
+const SECTIONS = [
+  { title: "Hardware prep", items: [
+    { text: "Unbox and inspect for physical damage", note: "" },
+    { text: "Charge laptop to 100% before first boot", note: "" },
+    { text: "Verify model, RAM, storage match provisioning ticket", note: "" },
+    { text: "Apply asset tag / inventory label", note: "Log serial number and asset tag in inventory system" },
+  ]},
+  { title: "Autopilot enrollment", items: [
+    { text: "Power on and connect to network (wired or trusted Wi-Fi)", note: "" },
+    { text: "Confirm device appears in Intune Autopilot devices list", note: "Intune admin center > Devices > Enrollment > Windows Autopilot" },
+    { text: "Assign Autopilot profile if not auto-assigned", note: "" },
+    { text: "Walk through OOBE -- sign in with new hire's UPN", note: "Entra ID account must already exist before this step" },
+    { text: "Confirm device joins Entra ID successfully", note: "" },
+    { text: "Verify Intune enrollment completes and compliance policy applies", note: "Intune > Devices > Windows -- status should show Compliant" },
+  ]},
+  { title: "Entra ID & account", items: [
+    { text: "Confirm user account created in Entra ID", note: "" },
+    { text: "Verify M365 Business Premium license assigned", note: "" },
+    { text: "Confirm correct group memberships (dept, dynamic groups)", note: "" },
+    { text: "Verify extension attributes populated (dept, location, hire date)", note: "onPremisesExtensionAttributes via Graph" },
+    { text: "Set Temporary Access Pass (TAP) if MFA not yet registered", note: "Entra ID > Users > [user] > Authentication methods > Add TAP" },
+  ]},
+  { title: "MFA & security", items: [
+    { text: "Send MFA registration instructions to new hire", note: "" },
+    { text: "Confirm Microsoft Authenticator set up on personal device", note: "Assist in-person via TAP if needed" },
+    { text: "Verify Conditional Access policies apply to user", note: "Test sign-in and confirm MFA prompt fires" },
+    { text: "Revoke TAP after MFA setup is confirmed", note: "" },
+    { text: "Confirm no SMS/voice-only MFA methods registered", note: "Authentication methods in Entra admin center" },
+  ]},
+  { title: "Apps & software", items: [
+    { text: "M365 apps installed and activated (Word, Excel, Outlook, Teams)", note: "" },
+    { text: "Outlook profile configured and mailbox accessible", note: "" },
+    { text: "OneDrive sync running and pointed to correct account", note: "" },
+    { text: "Teams signed in and functional", note: "" },
+    { text: "Role-specific apps deployed via Intune", note: "" },
+    { text: "Edge configured -- signed in, default profile set", note: "" },
+    { text: "Windows Update current -- no pending reboots", note: "" },
+  ]},
+  { title: "SharePoint & permissions", items: [
+    { text: "User can access SharePoint sites appropriate to role", note: "" },
+    { text: "Shared document libraries visible and synced if needed", note: "" },
+    { text: "Teams channels and shared mailboxes confirmed accessible", note: "" },
+  ]},
+  { title: "Final checks & handoff", items: [
+    { text: "Full reboot -- confirm no errors on restart", note: "" },
+    { text: "BitLocker active and recovery key escrowed to Entra", note: "Settings > Privacy & security > Device encryption" },
+    { text: "Defender for Business running and showing no threats", note: "" },
+    { text: "Device name follows naming convention", note: "" },
+    { text: "Deployment logged in inventory / ticket system", note: "" },
+    { text: "Laptop handed off to new hire with login instructions", note: "" },
+  ]}
+];
+ 
+const TOTAL_ITEMS = SECTIONS.reduce((a, s) => a + s.items.length, 0);
+ 
+// ============================================================
+// Storage & state
+// ============================================================
+const STORE_KEY = 'okm_deploy_v3';
+let db = {};
+let activeId = null;
+ 
+function load() {
+  try { db = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { db = {}; }
+}
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(db)); }
+function getChecked(h) { return Object.values(h.checks || {}).filter(Boolean).length; }
+ 
+// ============================================================
+// Render
+// ============================================================
+function renderSidebar() {
+  const list = document.getElementById('hire-list');
+  const keys = Object.keys(db).sort((a,b) => db[b].created - db[a].created);
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="empty-state">No hire records yet.<br>Click <strong>+ New hire</strong> to start.</div>';
+  } else {
+    list.innerHTML = keys.map(id => {
+      const h = db[id];
+      const done = getChecked(h);
+      const pct = Math.round((done / TOTAL_ITEMS) * 100);
+      const active = id === activeId ? ' active' : '';
+      return `<div class="hire-item${active}" onclick="selectHire('${id}')">
+        <div class="hire-item-inner">
+          <div class="hire-name">${esc(h.name)}</div>
+          <div class="hire-meta">${esc(h.dept || '')}${h.start ? ' &bull; ' + h.start : ''}</div>
+          <div class="hire-progress-bar"><div class="hire-progress-fill" style="width:${pct}%"></div></div>
+        </div>
+        <button class="hire-del" title="Delete" onclick="event.stopPropagation();deleteHire('${id}')">&#10005;</button>
+      </div>`;
+    }).join('');
+  }
+}
+ 
+function renderMain() {
+  const main = document.getElementById('main');
+  if (!activeId || !db[activeId]) {
+    main.innerHTML = `<div class="no-hire"><div class="icon">&#128187;</div><h2>No hire selected</h2><p>Select a hire from the sidebar or create a new one.</p></div>`;
+    return;
+  }
+  const h = db[activeId];
+  const done = getChecked(h);
+  const pct = Math.round((done / TOTAL_ITEMS) * 100);
+ 
+  const sectionPills = SECTIONS.map((s, si) => {
+    const secDone = s.items.filter((_,ii) => h.checks?.[`${si}_${ii}`]).length;
+    return `<span class="phase-pill${secDone === s.items.length ? ' done' : ''}">${esc(s.title)}</span>`;
+  }).join('');
+ 
+  const completeBanner = done === TOTAL_ITEMS
+    ? `<div class="complete-banner">&#10003; Deployment complete -- laptop ready for ${esc(h.name)}</div>` : '';
+ 
+  const sectionsHtml = SECTIONS.map((sec, si) => {
+    const secDone = sec.items.filter((_,ii) => h.checks?.[`${si}_${ii}`]).length;
+    const allDone = secDone === sec.items.length;
+    const isOpen = h.open?.[si] !== false;
+    const itemsHtml = sec.items.map((item, ii) => {
+      const key = `${si}_${ii}`;
+      const checked = !!h.checks?.[key];
+      return `<div class="check-item" onclick="toggleItem('${si}','${ii}')">
+        <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation();toggleItem('${si}','${ii}')">
+        <div class="check-text">
+          <div class="check-label${checked ? ' done' : ''}">${esc(item.text)}</div>
+          ${item.note ? `<div class="check-note">${esc(item.note)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="section${isOpen ? ' open' : ''}" id="sec-${si}">
+      <div class="section-header" onclick="toggleSection(${si})">
+        <span class="section-num">0${si+1}</span>
+        <span class="section-title">${esc(sec.title)}</span>
+        <span class="section-badge${allDone ? ' done' : ''}">${secDone}/${sec.items.length}</span>
+        <span class="chevron">&#9654;</span>
+      </div>
+      <div class="section-body">${itemsHtml}</div>
+    </div>`;
+  }).join('');
+ 
+  const subLine = [h.jobTitle, h.dept].filter(Boolean).join(' | ');
+  const metaLine = [h.upn, h.start ? 'Start: ' + h.start : '', h.asset].filter(Boolean).join(' &bull; ');
+  const r = 26, cx = 30, cy = 30, circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+ 
+  main.innerHTML = `
+    <div class="hire-header">
+      <div class="hire-title-wrap">
+        <div class="hire-title">${esc(h.name)}</div>
+        ${subLine ? `<div class="hire-subtitle">${esc(subLine)}</div>` : ''}
+        ${metaLine ? `<div class="hire-subtitle" style="margin-top:2px;font-size:11px">${metaLine}</div>` : ''}
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="resetHire()">Reset</button>
+        <button class="btn danger" onclick="deleteHire('${activeId}')">Delete</button>
+      </div>
+    </div>
+    ${completeBanner}
+    <div class="progress-card">
+      <div>
+        <svg class="ring" width="60" height="60" viewBox="0 0 60 60">
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#E0DDD8" stroke-width="5"/>
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1D6B4A" stroke-width="5"
+            stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+        </svg>
+      </div>
+      <div class="progress-stats">
+        <div class="progress-fraction">${done}<span style="font-size:16px;color:var(--text-faint)"> / ${TOTAL_ITEMS}</span></div>
+        <div class="progress-label">${pct}% complete</div>
+        <div class="phase-pills">${sectionPills}</div>
+      </div>
+    </div>
+    ${sectionsHtml}
+    <div class="notes-section">
+      <div class="notes-header">Notes <span>// deployment log</span></div>
+      <textarea class="notes" placeholder="Serial number, TAP issued, ticket ID, issues encountered..." oninput="saveNotes(this.value)">${esc(h.notes || '')}</textarea>
+    </div>`;
+}
+ 
+function selectHire(id) { activeId = id; renderSidebar(); renderMain(); }
+ 
+function toggleItem(si, ii) {
+  if (!activeId) return;
+  const key = `${si}_${ii}`;
+  const h = db[activeId];
+  if (!h.checks) h.checks = {};
+  h.checks[key] = !h.checks[key];
+  save(); renderSidebar(); renderMain();
+}
+ 
+function toggleSection(si) {
+  if (!activeId) return;
+  const h = db[activeId];
+  if (!h.open) h.open = {};
+  h.open[si] = h.open[si] === false ? true : false;
+  save();
+  const sec = document.getElementById('sec-' + si);
+  if (sec) sec.classList.toggle('open');
+}
+ 
+function saveNotes(val) {
+  if (!activeId) return;
+  db[activeId].notes = val;
+  save();
+}
+ 
+function resetHire() {
+  if (!activeId || !confirm('Reset all checkboxes for this hire?')) return;
+  db[activeId].checks = {};
+  save(); renderSidebar(); renderMain();
+}
+ 
+function deleteHire(id) {
+  if (!confirm(`Delete checklist for ${db[id].name}? This cannot be undone.`)) return;
+  delete db[id];
+  if (activeId === id) activeId = null;
+  save(); renderSidebar(); renderMain();
+}
+ 
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+ 
+// Init
+load();
+const firstId = Object.keys(db).sort((a,b) => db[b].created - db[a].created)[0];
+if (firstId) { activeId = firstId; }
+renderSidebar();
+renderMain();
+initMsal();
+</script>
+</body>
+</html>
+ 
