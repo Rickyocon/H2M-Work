@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Laptop Deployment Checklist</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+    <script src="https://alcdn.msauth.net/browser/2.30.0/ms-browser-client-4.4.1.js"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap"
       rel="stylesheet"
@@ -251,6 +251,176 @@
       .sidebar-footer {
         padding: 12px 18px;
         border-top: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+      }
+
+      .entra-btn {
+        flex: 1;
+        background: var(--surface);
+        color: var(--text-muted);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius);
+        padding: 8px 12px;
+        font-family: var(--sans);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .entra-btn:hover {
+        background: var(--border-light);
+        border-color: var(--secondary);
+        color: var(--secondary);
+      }
+
+      .entra-btn.signed-in {
+        background: rgba(96, 140, 165, 0.15);
+        border-color: var(--secondary);
+        color: var(--secondary);
+      }
+
+      .search-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+      }
+
+      .search-modal-overlay.open {
+        display: flex;
+      }
+
+      .search-modal {
+        background: var(--surface-alt);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        width: 550px;
+        max-width: 95vw;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .search-modal h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--secondary);
+      }
+
+      .search-modal-subtitle {
+        font-size: 12px;
+        color: var(--text-faint);
+        margin-bottom: 20px;
+        font-family: var(--mono);
+      }
+
+      .search-box {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .search-box input {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        font-family: var(--sans);
+        font-size: 13px;
+        color: var(--text);
+        background: var(--surface);
+        outline: none;
+        transition: all 0.2s;
+      }
+
+      .search-box input:focus {
+        border-color: var(--secondary);
+        box-shadow: 0 0 0 3px rgba(96, 140, 165, 0.1);
+      }
+
+      .search-box button {
+        background: var(--secondary);
+        color: white;
+        border: none;
+        border-radius: var(--radius);
+        padding: 10px 16px;
+        font-family: var(--sans);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .search-box button:hover {
+        opacity: 0.9;
+      }
+
+      .search-results {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+
+      .search-result-item {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .search-result-item:last-child {
+        border-bottom: none;
+      }
+
+      .search-result-item:hover {
+        background: var(--surface-alt);
+      }
+
+      .search-result-name {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .search-result-meta {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-top: 2px;
+        font-family: var(--mono);
+      }
+
+      .search-loading {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-faint);
+      }
+
+      .search-empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 12px;
+      }
+
+      .search-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
       }
 
       /* Main */
@@ -858,13 +1028,25 @@
           <button
             class="new-hire-btn"
             id="new-hire-btn"
-            onclick="openNewHireModal()"
+            onclick="handleNewHireClick()"
           >
             <span>+</span> New Deployment
           </button>
         </div>
         <div class="hire-list" id="hire-list"></div>
-        <div class="sidebar-footer"></div>
+        <div class="sidebar-footer">
+          <button class="entra-btn" id="entra-btn" onclick="loginWithEntra()">
+            Sign In
+          </button>
+          <button
+            class="entra-btn"
+            id="search-user-btn"
+            onclick="openUserSearchModal()"
+            style="display: none"
+          >
+            Search User
+          </button>
+        </div>
       </aside>
 
       <main class="main" id="main">
@@ -989,7 +1171,252 @@
       </div>
     </div>
 
+    <!-- User Search Modal -->
+    <div class="search-modal-overlay" id="search-modal">
+      <div class="search-modal">
+        <h2>Search Entra User</h2>
+        <p class="search-modal-subtitle">Find user to auto-populate form</p>
+
+        <div class="search-box">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search by name or email..."
+            autocomplete="off"
+            onkeyup="if (event.key === 'Enter') searchEntraUsers();"
+          />
+          <button onclick="searchEntraUsers()">Search</button>
+        </div>
+
+        <div class="search-results" id="search-results" style="display: none">
+          <div class="search-empty">No results</div>
+        </div>
+
+        <div class="search-modal-actions">
+          <button class="btn" onclick="closeUserSearchModal()">Close</button>
+          <button class="btn-primary" onclick="continueWithoutUser()">
+            Continue Without User
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script>
+      // ============================================================
+      // SETUP INSTRUCTIONS
+      // ============================================================
+      // 1. Register an Azure AD Application:
+      //    - Go to: https://portal.azure.com
+      //    - Search for "App registrations" and select it
+      //    - Click "+ New registration"
+      //    - Name it "H2M Laptop Checklist"
+      //    - Select "Accounts in this organizational directory only"
+      //    - For Redirect URI: Select "Single-page application (SPA)"
+      //      and enter: http://localhost:8000 (or your deployed URL)
+      //    - Click "Register"
+      //
+      // 2. Copy your Client ID (Application ID)
+      //    - Go to "Overview" tab
+      //    - Copy "Application (client) ID"
+      //    - Paste it below in the MSAL config
+      //
+      // 3. Get your Tenant ID
+      //    - Also on "Overview" tab
+      //    - Copy "Directory (tenant) ID"
+      //    - Paste it below
+      //
+      // 4. Grant API permissions:
+      //    - Click "API permissions" in left menu
+      //    - Click "+ Add a permission"
+      //    - Select "Microsoft Graph"
+      //    - Select "Delegated permissions"
+      //    - Search for and add: User.Read, User.ReadBasic.All
+      //    - Click "Add permissions"
+      //
+      // 5. Replace YOUR_CLIENT_ID and YOUR_TENANT_ID below
+      //
+      // ============================================================
+      // MSAL Configuration
+      // ============================================================
+      const msalConfig = {
+        auth: {
+          clientId: "YOUR_CLIENT_ID", // Replace with your Application (client) ID
+          authority: "https://login.microsoftonline.com/YOUR_TENANT_ID", // Replace with your Directory (tenant) ID
+          redirectUri: window.location.origin,
+        },
+        cache: {
+          cacheLocation: "localStorage",
+          storeAuthStateInCookie: false,
+        },
+      };
+
+      const graphScopes = ["user.read", "user.readbasic.all"];
+      let msalInstance = null;
+      let msalAccount = null;
+
+      // Initialize MSAL
+      async function initMsal() {
+        msalInstance = new msal.PublicClientApplication(msalConfig);
+        try {
+          await msalInstance.initialize();
+          const accounts = msalInstance.getAllAccounts();
+          if (accounts.length > 0) {
+            msalAccount = accounts[0];
+            updateEntraUI(true);
+          }
+        } catch (error) {
+          console.error("MSAL initialization error:", error);
+        }
+      }
+
+      function updateEntraUI(isSignedIn) {
+        const entraBtn = document.getElementById("entra-btn");
+        const searchBtn = document.getElementById("search-user-btn");
+        if (isSignedIn) {
+          entraBtn.textContent = "Sign Out";
+          entraBtn.classList.add("signed-in");
+          searchBtn.style.display = "block";
+        } else {
+          entraBtn.textContent = "Sign In";
+          entraBtn.classList.remove("signed-in");
+          searchBtn.style.display = "none";
+        }
+      }
+
+      async function loginWithEntra() {
+        if (!msalInstance) await initMsal();
+
+        if (msalAccount) {
+          // Sign out
+          await msalInstance.logoutPopup();
+          msalAccount = null;
+          updateEntraUI(false);
+        } else {
+          // Sign in
+          try {
+            const result = await msalInstance.loginPopup({
+              scopes: graphScopes,
+            });
+            msalAccount = result.account;
+            updateEntraUI(true);
+          } catch (error) {
+            console.error("Login error:", error);
+            alert("Failed to sign in. Check console for details.");
+          }
+        }
+      }
+
+      async function searchEntraUsers() {
+        if (!msalAccount) {
+          alert("Please sign in first");
+          return;
+        }
+
+        const searchTerm = document.getElementById("search-input").value.trim();
+        if (!searchTerm) {
+          alert("Enter a name or email to search");
+          return;
+        }
+
+        const resultsDiv = document.getElementById("search-results");
+        resultsDiv.innerHTML = '<div class="search-loading">Searching...</div>';
+        resultsDiv.style.display = "block";
+
+        try {
+          const token = await msalInstance.acquireTokenSilent({
+            scopes: graphScopes,
+            account: msalAccount,
+          });
+          const response = await fetch(
+            `https://graph.microsoft.com/v1.0/users?$filter=startswith(displayName,'${searchTerm}') or startswith(userPrincipalName,'${searchTerm}') or startswith(mail,'${searchTerm}')&$select=id,displayName,mail,department,officeLocation,jobTitle,mobilePhone,telephoneNumber,employeeId,companyName`,
+            { headers: { Authorization: `Bearer ${token.accessToken}` } },
+          );
+
+          if (!response.ok) throw new Error("Search failed");
+          const data = await response.json();
+
+          if (data.value.length === 0) {
+            resultsDiv.innerHTML =
+              '<div class="search-empty">No users found</div>';
+          } else {
+            resultsDiv.innerHTML = data.value
+              .map(
+                (user) => `
+              <div class="search-result-item" onclick="selectEntraUser(${JSON.stringify(user).replace(/"/g, "&quot;")})">
+                <div class="search-result-name">${esc(user.displayName)}</div>
+                <div class="search-result-meta">${esc(user.mail || "")} • ${esc(user.jobTitle || "")}</div>
+              </div>
+            `,
+              )
+              .join("");
+          }
+        } catch (error) {
+          console.error("Search error:", error);
+          resultsDiv.innerHTML = `<div class="search-empty">Error: ${error.message}</div>`;
+        }
+      }
+
+      function selectEntraUser(user) {
+        // Map Entra fields to form fields
+        document.getElementById("m-name").value = user.displayName || "";
+        document.getElementById("m-email").value = user.mail || "";
+        document.getElementById("m-pc-name").value = user.employeeId
+          ? `${user.employeeId}-`
+          : "";
+
+        // Set department dropdown if it matches
+        const deptSelect = document.getElementById("m-dept");
+        if (user.department) {
+          for (let opt of deptSelect.options) {
+            if (opt.value.toLowerCase() === user.department.toLowerCase()) {
+              deptSelect.value = opt.value;
+              break;
+            }
+          }
+        }
+
+        // Set office dropdown if it matches
+        const officeSelect = document.getElementById("m-office");
+        if (user.officeLocation) {
+          for (let opt of officeSelect.options) {
+            if (
+              opt.value
+                .toLowerCase()
+                .includes(user.officeLocation.toLowerCase()) ||
+              user.officeLocation
+                .toLowerCase()
+                .includes(opt.value.toLowerCase())
+            ) {
+              officeSelect.value = opt.value;
+              break;
+            }
+          }
+        }
+
+        closeUserSearchModal();
+      }
+
+      function openUserSearchModal() {
+        document.getElementById("search-modal").classList.add("open");
+        document.getElementById("search-input").value = "";
+        document.getElementById("search-results").style.display = "none";
+        setTimeout(() => document.getElementById("search-input").focus(), 80);
+      }
+
+      function closeUserSearchModal() {
+        document.getElementById("search-modal").classList.remove("open");
+      }
+
+      function continueWithoutUser() {
+        closeUserSearchModal();
+        openNewHireModal();
+      }
+
+      document
+        .getElementById("search-modal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeUserSearchModal();
+        });
       // ============================================================
       // Checklist Sections Data
       // ============================================================
@@ -1139,13 +1566,13 @@
               const pct = Math.round((done / TOTAL_ITEMS) * 100);
               const active = id === activeId ? " active" : "";
               return `<div class="hire-item${active}" onclick="selectHire('${id}')">
-        <div class="hire-item-inner">
-          <div class="hire-name">${esc(h.name)}</div>
-          <div class="hire-meta">${esc(h.dept || "")}${h.office ? " • " + esc(h.office) : ""}</div>
-          <div class="hire-progress-bar"><div class="hire-progress-fill" style="width:${pct}%"></div></div>
-        </div>
-        <button class="hire-del" title="Delete" onclick="event.stopPropagation();deleteHire('${id}')">✕</button>
-      </div>`;
+          <div class="hire-item-inner">
+            <div class="hire-name">${esc(h.name)}</div>
+            <div class="hire-meta">${esc(h.dept || "")}${h.office ? " • " + esc(h.office) : ""}</div>
+            <div class="hire-progress-bar"><div class="hire-progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <button class="hire-del" title="Delete" onclick="event.stopPropagation();deleteHire('${id}')">✕</button>
+        </div>`;
             })
             .join("");
         }
@@ -1185,23 +1612,23 @@
               const key = `${si}_${ii}`;
               const checked = !!h.checks?.[key];
               return `<div class="check-item" onclick="toggleItem('${si}','${ii}')">
-        <input type="checkbox" ${checked ? "checked" : ""} onclick="event.stopPropagation();toggleItem('${si}','${ii}')">
-        <div class="check-text">
-          <div class="check-label${checked ? " done" : ""}">${esc(item.text)}</div>
-          ${item.note ? `<div class="check-note">${esc(item.note)}</div>` : ""}
-        </div>
-      </div>`;
+          <input type="checkbox" ${checked ? "checked" : ""} onclick="event.stopPropagation();toggleItem('${si}','${ii}')">
+          <div class="check-text">
+            <div class="check-label${checked ? " done" : ""}">${esc(item.text)}</div>
+            ${item.note ? `<div class="check-note">${esc(item.note)}</div>` : ""}
+          </div>
+        </div>`;
             })
             .join("");
           return `<div class="section${isOpen ? " open" : ""}" id="sec-${si}">
-      <div class="section-header" onclick="toggleSection(${si})">
-        <span class="section-num">0${si + 1}</span>
-        <span class="section-title">${esc(sec.title)}</span>
-        <span class="section-badge${allDone ? " done" : ""}">${secDone}/${sec.items.length}</span>
-        <span class="chevron">►</span>
-      </div>
-      <div class="section-body">${itemsHtml}</div>
-    </div>`;
+        <div class="section-header" onclick="toggleSection(${si})">
+          <span class="section-num">0${si + 1}</span>
+          <span class="section-title">${esc(sec.title)}</span>
+          <span class="section-badge${allDone ? " done" : ""}">${secDone}/${sec.items.length}</span>
+          <span class="chevron">►</span>
+        </div>
+        <div class="section-body">${itemsHtml}</div>
+      </div>`;
         }).join("");
 
         const subLine = [h.empType, h.department].filter(Boolean).join(" • ");
@@ -1219,40 +1646,39 @@
         const dash = (pct / 100) * circ;
 
         main.innerHTML = `
-    <div class="hire-header">
-      <div class="hire-title-wrap">
-        <div class="hire-title">${esc(h.name)}</div>
-        ${subLine ? `<div class="hire-subtitle">${esc(subLine)}</div>` : ""}
-        ${metaLine ? `<div class="hire-subtitle" style="margin-top:3px;font-size:11px;font-weight:500">${metaLine}</div>` : ""}
+      <div class="hire-header">
+        <div class="hire-title-wrap">
+          <div class="hire-title">${esc(h.name)}</div>
+          ${subLine ? `<div class="hire-subtitle">${esc(subLine)}</div>` : ""}
+          ${metaLine ? `<div class="hire-subtitle" style="margin-top:3px;font-size:11px;font-weight:500">${metaLine}</div>` : ""}
+        </div>
+        <div class="header-actions">
+          <button class="btn export" onclick="exportPDF()">📄 Export PDF</button>
+          <button class="btn" onclick="resetHire()">Reset</button>
+          <button class="btn danger" onclick="deleteHire('${activeId}')">Delete</button>
+        </div>
       </div>
-      <div class="header-actions">
-        <button class="btn export" onclick="exportPDF()">📄 Export PDF</button>
-        <!-- <button class="btn export" onclick="exportWord()">📑 Export Word</button> -->
-        <button class="btn" onclick="resetHire()">Reset</button>
-        <button class="btn danger" onclick="deleteHire('${activeId}')">Delete</button>
+      ${completeBanner}
+      <div class="progress-card">
+        <div>
+          <svg class="ring" width="60" height="60" viewBox="0 0 60 60">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2C3D54" stroke-width="5"/>
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#00D9FF" stroke-width="5"
+              stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+              stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+          </svg>
+        </div>
+        <div class="progress-stats">
+          <div class="progress-fraction">${done}<span style="font-size:16px;color:var(--text-faint)"> / ${TOTAL_ITEMS}</span></div>
+          <div class="progress-label">${pct}% complete</div>
+          <div class="phase-pills">${sectionPills}</div>
+        </div>
       </div>
-    </div>
-    ${completeBanner}
-    <div class="progress-card">
-      <div>
-        <svg class="ring" width="60" height="60" viewBox="0 0 60 60">
-          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2C3D54" stroke-width="5"/>
-          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#00D9FF" stroke-width="5"
-            stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
-            stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
-        </svg>
-      </div>
-      <div class="progress-stats">
-        <div class="progress-fraction">${done}<span style="font-size:16px;color:var(--text-faint)"> / ${TOTAL_ITEMS}</span></div>
-        <div class="progress-label">${pct}% complete</div>
-        <div class="phase-pills">${sectionPills}</div>
-      </div>
-    </div>
-    ${sectionsHtml}
-    <div class="notes-section">
-      <div class="notes-header">Deployment Notes <span>// log any issues here</span></div>
-      <textarea class="notes" placeholder="Serial number, issues encountered, special configurations..." oninput="saveNotes(this.value)">${esc(h.notes || "")}</textarea>
-    </div>`;
+      ${sectionsHtml}
+      <div class="notes-section">
+        <div class="notes-header">Deployment Notes <span>// log any issues here</span></div>
+        <textarea class="notes" placeholder="Serial number, issues encountered, special configurations..." oninput="saveNotes(this.value)">${esc(h.notes || "")}</textarea>
+      </div>`;
       }
 
       function selectHire(id) {
@@ -1338,117 +1764,6 @@
         html2pdf().set(opt).from(element).save();
       }
 
-      function exportWord() {
-        if (!activeId) return;
-        const h = db[activeId];
-        const done = getChecked(h);
-        const pct = Math.round((done / TOTAL_ITEMS) * 100);
-
-        const sections = [];
-
-        // Title and header
-        sections.push(
-          new docx.Paragraph({
-            text: `${h.name}`,
-            heading: docx.HeadingLevel.HEADING_1,
-            bold: true,
-            spacing: { after: 100 },
-          }),
-        );
-
-        // Employee info
-        const infoText = [h.empType, h.department, h.office, h.pcName, h.start]
-          .filter(Boolean)
-          .join(" • ");
-        sections.push(
-          new docx.Paragraph({
-            text: infoText,
-            spacing: { after: 200 },
-          }),
-        );
-
-        // Progress
-        sections.push(
-          new docx.Paragraph({
-            text: `Progress: ${done} / ${TOTAL_ITEMS} items (${pct}%)`,
-            bold: true,
-            spacing: { after: 200 },
-          }),
-        );
-
-        // Sections with checklist items
-        SECTIONS.forEach((sec, si) => {
-          sections.push(
-            new docx.Paragraph({
-              text: sec.title,
-              heading: docx.HeadingLevel.HEADING_2,
-              bold: true,
-              spacing: { after: 100 },
-            }),
-          );
-
-          sec.items.forEach((item, ii) => {
-            const key = `${si}_${ii}`;
-            const checked = !!h.checks?.[key];
-            sections.push(
-              new docx.Paragraph({
-                text: `${checked ? "☑" : "☐"} ${item.text}${item.note ? " (" + item.note + ")" : ""}`,
-                spacing: { after: 50 },
-              }),
-            );
-          });
-
-          sections.push(
-            new docx.Paragraph({ text: "", spacing: { after: 100 } }),
-          );
-        });
-
-        // Notes
-        sections.push(
-          new docx.Paragraph({
-            text: "Deployment Notes",
-            heading: docx.HeadingLevel.HEADING_2,
-            bold: true,
-            spacing: { after: 100 },
-          }),
-        );
-
-        sections.push(
-          new docx.Paragraph({
-            text: h.notes || "(No notes)",
-            spacing: { after: 200 },
-          }),
-        );
-
-        // Generated info
-        sections.push(
-          new docx.Paragraph({
-            text: `Generated: ${new Date().toLocaleString()}`,
-            italics: true,
-            color: "999999",
-            spacing: { after: 0 },
-          }),
-        );
-
-        const doc = new docx.Document({
-          sections: [
-            {
-              properties: {},
-              children: sections,
-            },
-          ],
-        });
-
-        docx.Packer.toBlob(doc).then((blob) => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `Deployment_${h.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.docx`;
-          a.click();
-          URL.revokeObjectURL(url);
-        });
-      }
-
       // ============================================================
       // Modal Functions
       // ============================================================
@@ -1471,6 +1786,14 @@
         setTimeout(() => document.getElementById("m-name").focus(), 80);
       }
 
+      function handleNewHireClick() {
+        if (msalAccount) {
+          openUserSearchModal();
+        } else {
+          openNewHireModal();
+        }
+      }
+
       function closeModal() {
         document.getElementById("modal").classList.remove("open");
       }
@@ -1485,7 +1808,6 @@
         const id = "h" + Date.now() + Math.random().toString(36).slice(2, 6);
         db[id] = {
           name,
-          dept: document.getElementById("m-dept").value.trim(),
           department: document.getElementById("m-dept").value.trim(),
           office: document.getElementById("m-office").value.trim(),
           pcName: document.getElementById("m-pc-name").value.trim(),
@@ -1528,6 +1850,7 @@
 
       // Init
       load();
+      initMsal();
       const firstId = Object.keys(db).sort(
         (a, b) => db[b].created - db[a].created,
       )[0];
