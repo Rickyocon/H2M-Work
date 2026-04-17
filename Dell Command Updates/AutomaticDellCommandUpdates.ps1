@@ -6,8 +6,11 @@
 .DESCRIPTION
     1. Scans for updates matching configured filters
     2. Applies available updates
-    3. If reboot required, prompts user
+    3. If reboot required, prompts user in their session
     4. If user reboots, runs post-reboot verification via scheduled task
+    
+.NOTES
+    Works as SYSTEM (Intune) while showing prompts to logged-in user.
 #>
 
 param([switch]$Verify)
@@ -128,98 +131,166 @@ function Invoke-DCU {
     }
 }
 
-function Show-RebootPrompt {
-    param([int]$TimeoutSec = 60)
-    Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
+function Get-LoggedInUser {
+    $LoggedInUser = $null
     
-    $Result = $false
-    $Remaining = $TimeoutSec
-    
-    $Window = New-Object System.Windows.Window
-    $Window.Title = "Dell Command | Update - Reboot Required"
-    $Window.Width = 450
-    $Window.Height = 240
-    $Window.WindowStartupLocation = [System.Windows.WindowStartupLocation]::CenterScreen
-    $Window.ResizeMode = [System.Windows.ResizeMode]::NoResize
-    $Window.Topmost = $true
-    
-    $Grid = New-Object System.Windows.Controls.Grid
-    1..4 | ForEach-Object {
-        $Row = New-Object System.Windows.Controls.RowDefinition
-        $Row.Height = [System.Windows.GridLength]::Auto
-        $Grid.RowDefinitions.Add($Row)
+    # Try to find logged-in user from Win32_LoggedInUser
+    try {
+        $Sessions = Get-CimInstance -ClassName Win32_LoggedInUser -ErrorAction SilentlyContinue
+        foreach ($Session in $Sessions) {
+            if ($Session.Antecedent.Name -ne "SYSTEM" -and $Session.Antecedent.Name -ne "LOCAL SERVICE" -and $Session.Antecedent.Name -ne "NETWORK SERVICE") {
+                $LoggedInUser = $Session.Antecedent.Name
+                break
+            }
+        }
+    } catch {
+        Write-Log "Could not query Win32_LoggedInUser: $_" -Level WARN
     }
     
-    $Title = New-Object System.Windows.Controls.TextBlock
-    $Title.Text = "Reboot Required"
-    $Title.FontSize = 16
-    $Title.FontWeight = [System.Windows.FontWeights]::Bold
-    $Title.Margin = "20,20,20,4"
-    [System.Windows.Controls.Grid]::SetRow($Title, 0)
-    $Grid.Children.Add($Title) | Out-Null
-    
-    $Body = New-Object System.Windows.Controls.TextBlock
-    $Body.Text = "Dell updates applied successfully.`n`nA restart is required. Reboot now or postpone?"
-    $Body.TextWrapping = [System.Windows.TextWrapping]::Wrap
-    $Body.Margin = "20,8,20,8"
-    $Body.FontSize = 13
-    [System.Windows.Controls.Grid]::SetRow($Body, 1)
-    $Grid.Children.Add($Body) | Out-Null
-    
-    $Countdown = New-Object System.Windows.Controls.TextBlock
-    $Countdown.Text = "Defaulting to Postpone in $TimeoutSec seconds..."
-    $Countdown.FontSize = 11
-    $Countdown.Foreground = [System.Windows.Media.Brushes]::Gray
-    $Countdown.Margin = "20,0,20,12"
-    [System.Windows.Controls.Grid]::SetRow($Countdown, 2)
-    $Grid.Children.Add($Countdown) | Out-Null
-    
-    $ButtonPanel = New-Object System.Windows.Controls.StackPanel
-    $ButtonPanel.Orientation = [System.Windows.Controls.Orientation]::Horizontal
-    $ButtonPanel.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Right
-    $ButtonPanel.Margin = "20,0,20,20"
-    [System.Windows.Controls.Grid]::SetRow($ButtonPanel, 3)
-    
-    $BtnPostpone = New-Object System.Windows.Controls.Button
-    $BtnPostpone.Content = "Postpone"
-    $BtnPostpone.Width = 100
-    $BtnPostpone.Margin = "0,0,10,0"
-    $BtnPostpone.Add_Click({
-        $Result = $false
-        $Window.Close()
-    })
-    
-    $BtnReboot = New-Object System.Windows.Controls.Button
-    $BtnReboot.Content = "Reboot Now"
-    $BtnReboot.Width = 110
-    $BtnReboot.Background = [System.Windows.Media.Brushes]::SteelBlue
-    $BtnReboot.Foreground = [System.Windows.Media.Brushes]::White
-    $BtnReboot.Add_Click({
-        $Result = $true
-        $Window.Close()
-    })
-    
-    $ButtonPanel.Children.Add($BtnPostpone) | Out-Null
-    $ButtonPanel.Children.Add($BtnReboot) | Out-Null
-    $Grid.Children.Add($ButtonPanel) | Out-Null
-    $Window.Content = $Grid
-    
-    # Countdown timer
-    $Timer = New-Object System.Windows.Threading.DispatcherTimer
-    $Timer.Interval = [TimeSpan]::FromSeconds(1)
-    $Timer.Add_Tick({
-        $Remaining--
-        $Countdown.Text = "Defaulting to Postpone in $Remaining seconds..."
-        if ($Remaining -le 0) {
-            $Timer.Stop()
-            $Result = $false
-            $Window.Close()
+    # Fallback: check registry
+    if (-not $LoggedInUser) {
+        try {
+            $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI"
+            $LoggedInUser = (Get-ItemProperty -Path $RegPath -Name "LastLoggedOnUser" -ErrorAction SilentlyContinue).LastLoggedOnUser
+        } catch {
+            Write-Log "Could not query registry for last logged-in user: $_" -Level WARN
         }
-    })
-    $Timer.Start()
+    }
     
-    $Window.ShowDialog() | Out-Null
-    return $Result
+    return $LoggedInUser
+}
+
+function Show-RebootPromptToUser {
+    param([int]$TimeoutSec = 60)
+    
+    $LoggedInUser = Get-LoggedInUser
+    
+    if (-not $LoggedInUser) {
+        Write-Log "No logged-in user found. Defaulting to postpone." -Level WARN
+        return $false
+    }
+    
+    Write-Log "Showing reboot prompt to user: $LoggedInUser" -Level INFO
+    
+    # Create a temporary script to run in user session
+    $TempScript = "$env:TEMP\DellRebootPrompt_$([guid]::NewGuid()).ps1"
+    
+    $ScriptContent = @"
+`$Result = `$false
+`$Remaining = $TimeoutSec
+
+Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
+
+`$Window = New-Object System.Windows.Window
+`$Window.Title = "Dell Command | Update - Reboot Required"
+`$Window.Width = 450
+`$Window.Height = 240
+`$Window.WindowStartupLocation = [System.Windows.WindowStartupLocation]::CenterScreen
+`$Window.ResizeMode = [System.Windows.ResizeMode]::NoResize
+`$Window.Topmost = `$true
+
+`$Grid = New-Object System.Windows.Controls.Grid
+1..4 | ForEach-Object {
+    `$Row = New-Object System.Windows.Controls.RowDefinition
+    `$Row.Height = [System.Windows.GridLength]::Auto
+    `$Grid.RowDefinitions.Add(`$Row)
+}
+
+`$Title = New-Object System.Windows.Controls.TextBlock
+`$Title.Text = "Reboot Required"
+`$Title.FontSize = 16
+`$Title.FontWeight = [System.Windows.FontWeights]::Bold
+`$Title.Margin = "20,20,20,4"
+[System.Windows.Controls.Grid]::SetRow(`$Title, 0)
+`$Grid.Children.Add(`$Title) | Out-Null
+
+`$Body = New-Object System.Windows.Controls.TextBlock
+`$Body.Text = "Dell updates applied successfully.`n`nA restart is required. Reboot now or postpone?"
+`$Body.TextWrapping = [System.Windows.TextWrapping]::Wrap
+`$Body.Margin = "20,8,20,8"
+`$Body.FontSize = 13
+[System.Windows.Controls.Grid]::SetRow(`$Body, 1)
+`$Grid.Children.Add(`$Body) | Out-Null
+
+`$Countdown = New-Object System.Windows.Controls.TextBlock
+`$Countdown.Text = "Defaulting to Postpone in $TimeoutSec seconds..."
+`$Countdown.FontSize = 11
+`$Countdown.Foreground = [System.Windows.Media.Brushes]::Gray
+`$Countdown.Margin = "20,0,20,12"
+[System.Windows.Controls.Grid]::SetRow(`$Countdown, 2)
+`$Grid.Children.Add(`$Countdown) | Out-Null
+
+`$ButtonPanel = New-Object System.Windows.Controls.StackPanel
+`$ButtonPanel.Orientation = [System.Windows.Controls.Orientation]::Horizontal
+`$ButtonPanel.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Right
+`$ButtonPanel.Margin = "20,0,20,20"
+[System.Windows.Controls.Grid]::SetRow(`$ButtonPanel, 3)
+
+`$BtnPostpone = New-Object System.Windows.Controls.Button
+`$BtnPostpone.Content = "Postpone"
+`$BtnPostpone.Width = 100
+`$BtnPostpone.Margin = "0,0,10,0"
+`$BtnPostpone.Add_Click({
+    `$Result = `$false
+    `$Window.Close()
+})
+
+`$BtnReboot = New-Object System.Windows.Controls.Button
+`$BtnReboot.Content = "Reboot Now"
+`$BtnReboot.Width = 110
+`$BtnReboot.Background = [System.Windows.Media.Brushes]::SteelBlue
+`$BtnReboot.Foreground = [System.Windows.Media.Brushes]::White
+`$BtnReboot.Add_Click({
+    `$Result = `$true
+    `$Window.Close()
+})
+
+`$ButtonPanel.Children.Add(`$BtnPostpone) | Out-Null
+`$ButtonPanel.Children.Add(`$BtnReboot) | Out-Null
+`$Grid.Children.Add(`$ButtonPanel) | Out-Null
+`$Window.Content = `$Grid
+
+`$Timer = New-Object System.Windows.Threading.DispatcherTimer
+`$Timer.Interval = [TimeSpan]::FromSeconds(1)
+`$Timer.Add_Tick({
+    `$Remaining--
+    `$Countdown.Text = "Defaulting to Postpone in `$Remaining seconds..."
+    if (`$Remaining -le 0) {
+        `$Timer.Stop()
+        `$Result = `$false
+        `$Window.Close()
+    }
+})
+`$Timer.Start()
+
+`$Window.ShowDialog() | Out-Null
+exit ([int]`$Result)
+"@
+    
+    $ScriptContent | Set-Content -Path $TempScript -Force -Encoding UTF8
+    
+    try {
+        # Run the script as the logged-in user using WMI
+        $ProcessInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $ProcessInfo.FileName = "powershell.exe"
+        $ProcessInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$TempScript`""
+        $ProcessInfo.UseShellExecute = $false
+        $ProcessInfo.RedirectStandardOutput = $true
+        $ProcessInfo.CreateNoWindow = $false
+        
+        $Process = [System.Diagnostics.Process]::Start($ProcessInfo)
+        $Process.WaitForExit()
+        
+        $UserChoice = [bool]($Process.ExitCode -eq 1)
+        
+        Write-Log "User choice: $(if ($UserChoice) { 'Reboot Now' } else { 'Postpone' })" -Level INFO
+        return $UserChoice
+    } catch {
+        Write-Log "Failed to show prompt to user: $_. Defaulting to postpone." -Level WARN
+        return $false
+    } finally {
+        Remove-Item -Path $TempScript -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Register-VerifyTask {
@@ -338,8 +409,8 @@ if ($ApplyCode -eq 1) {
     # Register verification task BEFORE prompting
     Register-VerifyTask
     
-    # Show prompt
-    $UserChoice = Show-RebootPrompt -TimeoutSec $RebootTimeoutSec
+    # Show prompt to logged-in user
+    $UserChoice = Show-RebootPromptToUser -TimeoutSec $RebootTimeoutSec
     
     if ($UserChoice) {
         Write-Log "User selected: Reboot Now. Restarting in 5 seconds..." -Level WARN
