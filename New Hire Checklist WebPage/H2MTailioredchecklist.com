@@ -12,24 +12,43 @@
     />
     <style>
       :root {
-        --bg: #0f1419;
-        --surface: #1a2332;
-        --surface-alt: #232e42;
-        --border: #2c3d54;
-        --border-light: #3a4b65;
-        --text: #e8eaed;
-        --text-muted: #9ca3af;
-        --text-faint: #6b7280;
-        --accent: #00d9ff;
-        --accent-dark: #0099cc;
-        --accent-light: #4dd9ff;
-        --success: #10b981;
-        --danger: #ef4444;
-        --danger-bg: rgba(239, 68, 68, 0.1);
-        --danger-border: rgba(239, 68, 68, 0.3);
-        --warning: #f59e0b;
-        --info-bg: rgba(0, 217, 255, 0.08);
-        --info-border: rgba(0, 217, 255, 0.3);
+        /* Base backgrounds (slightly warmed to match palette) */
+        --bg: #121414;
+        --surface: #1e2326;
+        --surface-alt: #2a3034;
+
+        /* Borders */
+        --border: #3a3f42;
+        --border-light: #4a5054;
+
+        /* Text */
+        --text: #e6e6e3;
+        --text-muted: #a1a1a1;
+        --text-faint: #6f6f6f;
+
+        /* New main palette roles */
+        --accent: #99ae48; /* primary (green) */
+        --accent-dark: #7f913a;
+        --accent-light: #b7c76a;
+
+        --secondary: #608ca5; /* cool contrast (blue) */
+        --secondary-light: #7aa6bf;
+        --secondary-dark: #4e7488;
+
+        --neutral-accent: #564d48; /* earthy anchor */
+
+        /* Semantic colors (tuned to match palette) */
+        --success: #99ae48;
+        --danger: #d65c5c;
+        --danger-bg: rgba(214, 92, 92, 0.1);
+        --danger-border: rgba(214, 92, 92, 0.3);
+        --warning: #d4a373;
+
+        /* Info uses the blue now */
+        --info-bg: rgba(96, 140, 165, 0.12);
+        --info-border: rgba(96, 140, 165, 0.35);
+
+        /* Typography & layout */
         --mono: "Fira Code", monospace;
         --sans: "Space Grotesk", sans-serif;
         --radius: 8px;
@@ -686,6 +705,20 @@
         box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
       }
 
+      input[type="date"] {
+        position: relative;
+      }
+
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.7;
+        transition: 0.2s;
+      }
+
+      input[type="date"]:hover::-webkit-calendar-picker-indicator {
+        opacity: 1;
+      }
+
       .modal-actions {
         display: flex;
         justify-content: flex-end;
@@ -782,6 +815,20 @@
         }
       }
 
+      /* Prevent elements from being split across pages */
+      .section,
+      .progress-card,
+      .notes-section {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      /* Optional: keep headers with their content */
+      .section-header {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
       /* Print styles */
       @media print {
         .sidebar,
@@ -850,12 +897,25 @@
 
         <div class="field">
           <label>Department</label>
-          <input
-            type="text"
-            id="m-dept"
-            placeholder="Engineering"
-            autocomplete="off"
-          />
+          <select id="m-dept">
+            <option value="">Select Department</option>
+            <option value="Executive">Executive</option>
+            <option value="Human Resources">Human Resources</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Finance">Finance</option>
+            <option value="Information Technology">
+              Information Technology
+            </option>
+            <option value="Legal">Legal</option>
+            <option value="Facilities">Facilities</option>
+            <option value="Core">Core</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Architecture">Architecture</option>
+            <option value="Water">Water</option>
+            <option value="Environmental">Environmental</option>
+            <option value="Civil-Survey">Civil-Survey</option>
+            <option value="Inspector Field">Inspector Field</option>
+          </select>
         </div>
 
         <div class="field">
@@ -870,12 +930,18 @@
 
         <div class="field">
           <label>Office Location</label>
-          <input
-            type="text"
-            id="m-office"
-            placeholder="New York"
-            autocomplete="off"
-          />
+          <select id="m-office">
+            <option value="">Select Office</option>
+            <option value="Melville">Melville</option>
+            <option value="Parsippany">Parsippany</option>
+            <option value="NYC">NYC</option>
+            <option value="Suffern">Suffern</option>
+            <option value="Troy">Troy</option>
+            <option value="Boca">Boca</option>
+            <option value="Wall">Wall (Central New Jersey)</option>
+            <option value="Westchester">Westchester</option>
+            <option value="Windsor">Windsor</option>
+          </select>
         </div>
 
         <div class="field">
@@ -1161,7 +1227,7 @@
       </div>
       <div class="header-actions">
         <button class="btn export" onclick="exportPDF()">📄 Export PDF</button>
-        <button class="btn export" onclick="exportWord()">📑 Export Word</button>
+        <!-- <button class="btn export" onclick="exportWord()">📑 Export Word</button> -->
         <button class="btn" onclick="resetHire()">Reset</button>
         <button class="btn danger" onclick="deleteHire('${activeId}')">Delete</button>
       </div>
@@ -1258,11 +1324,15 @@
         btns.forEach((b) => b.remove());
 
         const opt = {
-          margin: [10, 10, 10, 10],
-          filename: `Deployment_${h.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`,
+          margin: [20, 20, 20, 20],
+          filename: `Setup & Install Checklist - ${h.name.replace(/\s+/g, "-")}_${new Date().toISOString().split("T")[0]}.pdf`,
           image: { type: "jpeg", quality: 0.98 },
           html2canvas: { scale: 2 },
           jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
+
+          pagebreak: {
+            mode: ["avoid-all", "css", "legacy"],
+          },
         };
 
         html2pdf().set(opt).from(element).save();
@@ -1385,6 +1455,7 @@
       function openNewHireModal() {
         [
           "m-name",
+          "m-email",
           "m-dept",
           "m-office",
           "m-pc-name",
