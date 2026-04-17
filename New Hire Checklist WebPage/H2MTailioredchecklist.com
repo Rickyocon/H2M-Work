@@ -200,7 +200,18 @@
         font-size: 11px;
         color: var(--text-faint);
         font-family: var(--mono);
-        margin-top: 2px;
+        margin-top: 4px;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.5;
+      }
+
+      .meta-line {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin: 2px 0;
+        display: flex;
+        flex-wrap: wrap;
       }
 
       .hire-progress-bar {
@@ -1201,6 +1212,48 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="reset-modal">
+      <div class="modal">
+        <h2>Reset Deployment</h2>
+        <p>
+          Are you sure you want to reset all checkboxes for this deployment?
+          This action cannot be undone.
+        </p>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+          "
+        >
+          <button class="btn" onclick="closeResetModal()">Cancel</button>
+          <button class="btn danger" onclick="confirmReset()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="delete-modal">
+      <div class="modal">
+        <h2>Delete Deployment</h2>
+        <p id="delete-modal-message">
+          Are you sure you want to delete this deployment? This action cannot be
+          undone.
+        </p>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+          "
+        >
+          <button class="btn" onclick="closeDeleteModal()">Cancel</button>
+          <button class="btn danger" onclick="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       // ============================================================
       // SETUP INSTRUCTIONS
@@ -1529,6 +1582,7 @@
       const STORE_KEY = "h2m_deploy_v1";
       let db = {};
       let activeId = null;
+      let deleteTargetId = null;
 
       function load() {
         try {
@@ -1565,10 +1619,35 @@
               const done = getChecked(h);
               const pct = Math.round((done / TOTAL_ITEMS) * 100);
               const active = id === activeId ? " active" : "";
+              const metaLines = [
+                h.email
+                  ? `<div class="meta-line">Email: ${esc(h.email)}</div>`
+                  : "",
+                h.dept
+                  ? `<div class="meta-line">Dept: ${esc(h.dept)}</div>`
+                  : "",
+                h.empType
+                  ? `<div class="meta-line">Type: ${esc(h.empType)}</div>`
+                  : "",
+                h.deviceType
+                  ? `<div class="meta-line">Device: ${esc(h.deviceType)}</div>`
+                  : "",
+                h.pcName
+                  ? `<div class="meta-line">PC: ${esc(h.pcName)}</div>`
+                  : "",
+                h.office
+                  ? `<div class="meta-line">Office: ${esc(h.office)}</div>`
+                  : "",
+                h.start
+                  ? `<div class="meta-line">Start: ${esc(h.start)}</div>`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join("");
               return `<div class="hire-item${active}" onclick="selectHire('${id}')">
           <div class="hire-item-inner">
             <div class="hire-name">${esc(h.name)}</div>
-            <div class="hire-meta">${esc(h.dept || "")}${h.office ? " • " + esc(h.office) : ""}</div>
+            <div class="hire-meta">${metaLines}</div>
             <div class="hire-progress-bar"><div class="hire-progress-fill" style="width:${pct}%"></div></div>
           </div>
           <button class="hire-del" title="Delete" onclick="event.stopPropagation();deleteHire('${id}')">✕</button>
@@ -1588,6 +1667,7 @@
         const h = db[activeId];
         const done = getChecked(h);
         const pct = Math.round((done / TOTAL_ITEMS) * 100);
+        const isComplete = done === TOTAL_ITEMS || h.forceComplete;
 
         const sectionPills = SECTIONS.map((s, si) => {
           const secDone = s.items.filter(
@@ -1596,10 +1676,9 @@
           return `<span class="phase-pill${secDone === s.items.length ? " done" : ""}">${esc(s.title)}</span>`;
         }).join("");
 
-        const completeBanner =
-          done === TOTAL_ITEMS
-            ? `<div class="complete-banner">✓ Deployment complete -- laptop ready for ${esc(h.name)}</div>`
-            : "";
+        const completeBanner = isComplete
+          ? `<div class="complete-banner">✓ Deployment complete -- laptop ready for ${esc(h.name)}</div>`
+          : "";
 
         const sectionsHtml = SECTIONS.map((sec, si) => {
           const secDone = sec.items.filter(
@@ -1654,6 +1733,8 @@
         </div>
         <div class="header-actions">
           <button class="btn export" onclick="exportPDF()">📄 Export PDF</button>
+          <button class="btn" onclick="checkAllBoxes()">✓ Check All</button>
+          <button class="btn" onclick="forceComplete()">⚡ ${h.forceComplete ? "Unforce Complete" : "Force Complete"}</button>
           <button class="btn" onclick="resetHire()">Reset</button>
           <button class="btn danger" onclick="deleteHire('${activeId}')">Delete</button>
         </div>
@@ -1715,26 +1796,68 @@
       }
 
       function resetHire() {
-        if (!activeId || !confirm("Reset all checkboxes for this deployment?"))
-          return;
+        if (!activeId) return;
+        document.getElementById("reset-modal").classList.add("open");
+      }
+
+      function closeResetModal() {
+        document.getElementById("reset-modal").classList.remove("open");
+      }
+
+      function confirmReset() {
         db[activeId].checks = {};
+        db[activeId].forceComplete = false;
+        save();
+        renderSidebar();
+        renderMain();
+        closeResetModal();
+      }
+
+      function checkAllBoxes() {
+        if (!activeId) return;
+        const h = db[activeId];
+        if (!h.checks) h.checks = {};
+        SECTIONS.forEach((sec, si) => {
+          sec.items.forEach((_, ii) => {
+            h.checks[`${si}_${ii}`] = true;
+          });
+        });
+        h.forceComplete = false;
+        save();
+        renderSidebar();
+        renderMain();
+      }
+
+      function forceComplete() {
+        if (!activeId) return;
+        const h = db[activeId];
+        h.forceComplete = !h.forceComplete;
         save();
         renderSidebar();
         renderMain();
       }
 
       function deleteHire(id) {
-        if (
-          !confirm(
-            `Delete checklist for ${db[id].name}? This cannot be undone.`,
-          )
-        )
-          return;
-        delete db[id];
-        if (activeId === id) activeId = null;
+        if (!db[id]) return;
+        deleteTargetId = id;
+        document.getElementById("delete-modal-message").textContent =
+          `Delete checklist for ${db[id].name}? This cannot be undone.`;
+        document.getElementById("delete-modal").classList.add("open");
+      }
+
+      function closeDeleteModal() {
+        document.getElementById("delete-modal").classList.remove("open");
+        deleteTargetId = null;
+      }
+
+      function confirmDelete() {
+        if (!deleteTargetId) return;
+        delete db[deleteTargetId];
+        if (activeId === deleteTargetId) activeId = null;
         save();
         renderSidebar();
         renderMain();
+        closeDeleteModal();
       }
 
       // ============================================================
