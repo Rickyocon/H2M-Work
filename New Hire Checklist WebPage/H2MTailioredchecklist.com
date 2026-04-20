@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Laptop Deployment Checklist</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://alcdn.msauth.net/browser/2.30.0/ms-browser-client-4.4.1.js"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap"
@@ -1728,6 +1728,7 @@
       <div class="hire-header">
         <div class="hire-title-wrap">
           <div class="hire-title">${esc(h.name)}</div>
+          ${h.email ? `<div class="hire-subtitle">${esc(h.email)}</div>` : ""}
           ${subLine ? `<div class="hire-subtitle">${esc(subLine)}</div>` : ""}
           ${metaLine ? `<div class="hire-subtitle" style="margin-top:3px;font-size:11px;font-weight:500">${metaLine}</div>` : ""}
         </div>
@@ -1861,30 +1862,237 @@
       }
 
       // ============================================================
-      // Export Functions
+      // Export Functions (jsPDF - Text-Based - Professional)
       // ============================================================
-      function exportPDF() {
+      async function exportPDF() {
         if (!activeId) return;
         const h = db[activeId];
-        const element = document.getElementById("main").cloneNode(true);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+        });
 
-        // Remove export buttons before PDF
-        const btns = element.querySelectorAll(".header-actions");
-        btns.forEach((b) => b.remove());
+        // Load and add logo
+        try {
+          const logoUrl =
+            "https://www.h2m.com/wp-content/uploads/2023/01/H2M-90-Years-white.png";
+          const response = await fetch(logoUrl);
+          const blob = await response.blob();
+          const logoData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          doc.addImage(logoData, "PNG", 12, 8, 35, 12); // x, y, width, height
+        } catch (e) {
+          console.warn("Could not load logo:", e);
+        }
 
-        const opt = {
-          margin: [20, 20, 20, 20],
-          filename: `Setup & Install Checklist - ${h.name.replace(/\s+/g, "-")}_${new Date().toISOString().split("T")[0]}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPos = 28;
+        const margin = 12;
+        const lineHeight = 5;
+        let pageNum = 1;
 
-          pagebreak: {
-            mode: ["avoid-all", "css", "legacy"],
-          },
-        };
+        // Helper to add text with auto page break
+        function addText(text, fontSize = 11, bold = false, indent = 0) {
+          doc.setFontSize(fontSize);
+          doc.setFont(undefined, bold ? "bold" : "normal");
+          const x = margin + indent;
+          const maxWidth = pageWidth - 2 * margin - indent;
+          const lines = doc.splitTextToSize(text, maxWidth);
 
-        html2pdf().set(opt).from(element).save();
+          lines.forEach((line) => {
+            if (yPos + lineHeight > pageHeight - 15) {
+              addPageNumber();
+              doc.addPage();
+              yPos = 15;
+              pageNum++;
+            }
+            doc.text(line, x, yPos);
+            yPos += lineHeight;
+          });
+        }
+
+        function addLine() {
+          doc.setDrawColor(150, 150, 150);
+          doc.line(margin, yPos, pageWidth - margin, yPos);
+          yPos += 3;
+        }
+
+        function addPageNumber() {
+          doc.setFontSize(9);
+          doc.setFont(undefined, "normal");
+          doc.setTextColor(180, 180, 180);
+          doc.text(`Page ${pageNum}`, pageWidth - margin - 10, pageHeight - 8);
+          doc.setTextColor(0, 0, 0);
+        }
+
+        // Title with styling
+        doc.setFontSize(16);
+        doc.setFont(undefined, "bold");
+        doc.text("LAPTOP DEPLOYMENT CHECKLIST", margin, yPos);
+        yPos += 8;
+        addLine();
+        yPos += 2;
+
+        // Employee Info Section
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("EMPLOYEE INFORMATION", margin, yPos);
+        yPos += 6;
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        const done = getChecked(h);
+        const progress = Math.round((done / TOTAL_ITEMS) * 100);
+
+        const infoItems = [
+          [`Employee Name:`, h.name || "N/A"],
+          [`Email:`, h.email || "N/A"],
+          [`PC Name:`, h.pcName || "N/A"],
+          [`Department:`, h.department || "N/A"],
+          [`Type:`, h.empType || "N/A"],
+          [`Device Type:`, h.deviceType || "N/A"],
+          [`Office:`, h.office || "N/A"],
+          [`Start Date:`, h.start || "N/A"],
+          [`Progress:`, `${done}/${TOTAL_ITEMS} (${progress}%)`],
+        ];
+
+        infoItems.forEach(([label, value]) => {
+          doc.setFont(undefined, "bold");
+          doc.text(label, margin + 2, yPos);
+          doc.setFont(undefined, "normal");
+          doc.text(value, margin + 60, yPos);
+          yPos += 5;
+        });
+
+        yPos += 3;
+        addLine();
+        yPos += 2;
+
+        // Checklist Sections
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("DEPLOYMENT CHECKLIST", margin, yPos);
+        yPos += 6;
+
+        SECTIONS.forEach((sec, si) => {
+          // Force page break before section 6
+          if (si === 5 && pageNum === 1) {
+            addPageNumber();
+            doc.addPage();
+            yPos = 15;
+            pageNum++;
+          }
+
+          // Section header
+          doc.setFontSize(11);
+          doc.setFont(undefined, "bold");
+          doc.setFillColor(230, 230, 230);
+          doc.rect(margin, yPos - 3.5, pageWidth - 2 * margin, 5.5, "F");
+          doc.text(`${si + 1}. ${sec.title}`, margin + 2, yPos);
+          yPos += 7;
+
+          // Section items
+          doc.setFontSize(9.5);
+          doc.setFont(undefined, "normal");
+          sec.items.forEach((item, ii) => {
+            // Check if we need a new page before adding item
+            if (yPos + 10 > pageHeight - 15) {
+              addPageNumber();
+              doc.addPage();
+              yPos = 15;
+              pageNum++;
+            }
+
+            const key = `${si}_${ii}`;
+            const isChecked = !!h.checks?.[key];
+            const prefix = isChecked ? "[X]" : "[ ]";
+
+            // Add checkbox prefix
+            doc.setFont(undefined, isChecked ? "bold" : "normal");
+            doc.text(prefix, margin + 2, yPos);
+
+            // Add item text
+            const maxWidth = pageWidth - 2 * margin - 12;
+            const lines = doc.splitTextToSize(item.text, maxWidth);
+            lines.forEach((line, idx) => {
+              // Check again if we need another page for wrapped lines
+              if (yPos + 4 > pageHeight - 15) {
+                addPageNumber();
+                doc.addPage();
+                yPos = 15;
+                pageNum++;
+              }
+              doc.text(line, margin + 10, yPos);
+              yPos += 4;
+            });
+
+            // Add note if exists
+            if (item.note) {
+              doc.setFontSize(8.5);
+              doc.setFont(undefined, "italic");
+              const noteLines = doc.splitTextToSize(
+                `* ${item.note}`,
+                maxWidth - 5,
+              );
+              noteLines.forEach((line) => {
+                // Check if we need another page for note lines
+                if (yPos + 3.5 > pageHeight - 15) {
+                  addPageNumber();
+                  doc.addPage();
+                  yPos = 15;
+                  pageNum++;
+                }
+                doc.text(line, margin + 13, yPos);
+                yPos += 3.5;
+              });
+              doc.setFontSize(9.5);
+            }
+          });
+
+          yPos += 2;
+        });
+
+        // Notes Section
+        if (h.notes) {
+          yPos += 2;
+          addLine();
+          yPos += 2;
+
+          doc.setFontSize(12);
+          doc.setFont(undefined, "bold");
+          doc.text("DEPLOYMENT NOTES", margin, yPos);
+          yPos += 5;
+
+          doc.setFontSize(9.5);
+          doc.setFont(undefined, "normal");
+          const noteLines = doc.splitTextToSize(
+            h.notes,
+            pageWidth - 2 * margin,
+          );
+          noteLines.forEach((line) => {
+            if (yPos + 4 > pageHeight - 15) {
+              addPageNumber();
+              doc.addPage();
+              yPos = 15;
+              pageNum++;
+            }
+            doc.text(line, margin, yPos);
+            yPos += 4;
+          });
+        }
+
+        // Footer
+        addPageNumber();
+
+        // Save
+        const filename = `Setup & Install Checklist - ${h.name.replace(/\s+/g, "-")}_${new Date().toISOString().split("T")[0]}.pdf`;
+        doc.save(filename);
       }
 
       // ============================================================
@@ -1931,6 +2139,7 @@
         const id = "h" + Date.now() + Math.random().toString(36).slice(2, 6);
         db[id] = {
           name,
+          email: document.getElementById("m-email").value.trim(),
           department: document.getElementById("m-dept").value.trim(),
           office: document.getElementById("m-office").value.trim(),
           pcName: document.getElementById("m-pc-name").value.trim(),
