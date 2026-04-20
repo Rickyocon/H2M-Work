@@ -853,6 +853,8 @@
 
       .field {
         margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
       }
 
       .field label {
@@ -888,6 +890,8 @@
 
       input[type="date"] {
         position: relative;
+        width: 100%;
+        font-family: var(--sans);
       }
 
       input[type="date"]::-webkit-calendar-picker-indicator {
@@ -1156,7 +1160,7 @@
           </select>
         </div>
 
-        <div class="field">
+        <div class="field" id="start-date-field">
           <label>Start Date</label>
           <input type="date" id="m-start" />
         </div>
@@ -1597,7 +1601,23 @@
       }
 
       function getChecked(h) {
-        return Object.values(h.checks || {}).filter(Boolean).length;
+        // Count only items from visible sections based on employee type
+        let count = 0;
+        SECTIONS.forEach((sec, si) => {
+          // Skip "New Account Setup" for Existing Employees
+          if (
+            h.empType === "Existing Employee" &&
+            sec.title === "New Account Setup"
+          ) {
+            return;
+          }
+          sec.items.forEach((_, ii) => {
+            if (h.checks?.[`${si}_${ii}`]) {
+              count++;
+            }
+          });
+        });
+        return count;
       }
 
       // ============================================================
@@ -1617,7 +1637,18 @@
             .map((id) => {
               const h = db[id];
               const done = getChecked(h);
-              const pct = Math.round((done / TOTAL_ITEMS) * 100);
+
+              // Calculate total items based on employee type
+              const sidebarVisibleSections =
+                h.empType === "Existing Employee"
+                  ? SECTIONS.filter((sec) => sec.title !== "New Account Setup")
+                  : SECTIONS;
+              const sidebarTotalItems = sidebarVisibleSections.reduce(
+                (a, s) => a + s.items.length,
+                0,
+              );
+
+              const pct = Math.round((done / sidebarTotalItems) * 100);
               const active = id === activeId ? " active" : "";
               const metaLines = [
                 h.email
@@ -1666,10 +1697,28 @@
 
         const h = db[activeId];
         const done = getChecked(h);
-        const pct = Math.round((done / TOTAL_ITEMS) * 100);
-        const isComplete = done === TOTAL_ITEMS || h.forceComplete;
+
+        // Calculate total items based on employee type
+        const visibleSections =
+          h.empType === "Existing Employee"
+            ? SECTIONS.filter((sec) => sec.title !== "New Account Setup")
+            : SECTIONS;
+        const totalItems = visibleSections.reduce(
+          (a, s) => a + s.items.length,
+          0,
+        );
+
+        const pct = Math.round((done / totalItems) * 100);
+        const isComplete = done === totalItems || h.forceComplete;
 
         const sectionPills = SECTIONS.map((s, si) => {
+          // Skip "New Account Setup" for Existing Employees
+          if (
+            h.empType === "Existing Employee" &&
+            s.title === "New Account Setup"
+          ) {
+            return "";
+          }
           const secDone = s.items.filter(
             (_, ii) => h.checks?.[`${si}_${ii}`],
           ).length;
@@ -1680,35 +1729,49 @@
           ? `<div class="complete-banner">✓ Deployment complete -- laptop ready for ${esc(h.name)}</div>`
           : "";
 
-        const sectionsHtml = SECTIONS.map((sec, si) => {
-          const secDone = sec.items.filter(
-            (_, ii) => h.checks?.[`${si}_${ii}`],
-          ).length;
-          const allDone = secDone === sec.items.length;
-          const isOpen = h.open?.[si] !== false;
-          const itemsHtml = sec.items
-            .map((item, ii) => {
-              const key = `${si}_${ii}`;
-              const checked = !!h.checks?.[key];
-              return `<div class="check-item" onclick="toggleItem('${si}','${ii}')">
-          <input type="checkbox" ${checked ? "checked" : ""} onclick="event.stopPropagation();toggleItem('${si}','${ii}')">
-          <div class="check-text">
-            <div class="check-label${checked ? " done" : ""}">${esc(item.text)}</div>
-            ${item.note ? `<div class="check-note">${esc(item.note)}</div>` : ""}
+        // Create array of visible sections with their original indices
+        const visibleSectionsWithIndices = SECTIONS.map((sec, originalSi) => ({
+          sec,
+          originalSi,
+        })).filter(
+          ({ sec }) =>
+            !(
+              h.empType === "Existing Employee" &&
+              sec.title === "New Account Setup"
+            ),
+        );
+
+        const sectionsHtml = visibleSectionsWithIndices
+          .map(({ sec, originalSi }, displayIndex) => {
+            const secDone = sec.items.filter(
+              (_, ii) => h.checks?.[`${originalSi}_${ii}`],
+            ).length;
+            const allDone = secDone === sec.items.length;
+            const isOpen = h.open?.[originalSi] !== false;
+            const itemsHtml = sec.items
+              .map((item, ii) => {
+                const key = `${originalSi}_${ii}`;
+                const checked = !!h.checks?.[key];
+                return `<div class="check-item" onclick="toggleItem('${originalSi}','${ii}')">
+            <input type="checkbox" ${checked ? "checked" : ""} onclick="event.stopPropagation();toggleItem('${originalSi}','${ii}')">
+            <div class="check-text">
+              <div class="check-label${checked ? " done" : ""}">${esc(item.text)}</div>
+              ${item.note ? `<div class="check-note">${esc(item.note)}</div>` : ""}
+            </div>
+          </div>`;
+              })
+              .join("");
+            return `<div class="section${isOpen ? " open" : ""}" id="sec-${originalSi}">
+          <div class="section-header" onclick="toggleSection(${originalSi})">
+            <span class="section-num">0${displayIndex + 1}</span>
+            <span class="section-title">${esc(sec.title)}</span>
+            <span class="section-badge${allDone ? " done" : ""}">${secDone}/${sec.items.length}</span>
+            <span class="chevron">►</span>
           </div>
+          <div class="section-body">${itemsHtml}</div>
         </div>`;
-            })
-            .join("");
-          return `<div class="section${isOpen ? " open" : ""}" id="sec-${si}">
-        <div class="section-header" onclick="toggleSection(${si})">
-          <span class="section-num">0${si + 1}</span>
-          <span class="section-title">${esc(sec.title)}</span>
-          <span class="section-badge${allDone ? " done" : ""}">${secDone}/${sec.items.length}</span>
-          <span class="chevron">►</span>
-        </div>
-        <div class="section-body">${itemsHtml}</div>
-      </div>`;
-        }).join("");
+          })
+          .join("");
 
         const subLine = [h.empType, h.department].filter(Boolean).join(" • ");
         const metaLine = [
@@ -1751,7 +1814,7 @@
           </svg>
         </div>
         <div class="progress-stats">
-          <div class="progress-fraction">${done}<span style="font-size:16px;color:var(--text-faint)"> / ${TOTAL_ITEMS}</span></div>
+          <div class="progress-fraction">${done}<span style="font-size:16px;color:var(--text-faint)"> / ${totalItems}</span></div>
           <div class="progress-label">${pct}% complete</div>
           <div class="phase-pills">${sectionPills}</div>
         </div>
@@ -1948,7 +2011,17 @@
         doc.setFontSize(10);
         doc.setFont(undefined, "normal");
         const done = getChecked(h);
-        const progress = Math.round((done / TOTAL_ITEMS) * 100);
+
+        // Calculate total items based on employee type
+        const pdfVisibleSections =
+          h.empType === "Existing Employee"
+            ? SECTIONS.filter((sec) => sec.title !== "New Account Setup")
+            : SECTIONS;
+        const pdfTotalItems = pdfVisibleSections.reduce(
+          (a, s) => a + s.items.length,
+          0,
+        );
+        const progress = Math.round((done / pdfTotalItems) * 100);
 
         const infoItems = [
           [`Employee Name:`, h.name || "N/A"],
@@ -1959,7 +2032,7 @@
           [`Device Type:`, h.deviceType || "N/A"],
           [`Office:`, h.office || "N/A"],
           [`Start Date:`, h.start || "N/A"],
-          [`Progress:`, `${done}/${TOTAL_ITEMS} (${progress}%)`],
+          [`Progress:`, `${done}/${pdfTotalItems} (${progress}%)`],
         ];
 
         infoItems.forEach(([label, value]) => {
@@ -1980,9 +2053,18 @@
         doc.text("DEPLOYMENT CHECKLIST", margin, yPos);
         yPos += 6;
 
-        SECTIONS.forEach((sec, si) => {
-          // Force page break before section 6
-          if (si === 5 && pageNum === 1) {
+        // Filter sections for Existing Employees
+        const pdfSections =
+          h.empType === "Existing Employee"
+            ? SECTIONS.filter((sec) => sec.title !== "New Account Setup")
+            : SECTIONS;
+
+        pdfSections.forEach((sec, displayIndex) => {
+          // Find original section index
+          const originalIndex = SECTIONS.indexOf(sec);
+
+          // Force page break before section 6 (which is index 5)
+          if (originalIndex === 5 && pageNum === 1) {
             addPageNumber();
             doc.addPage();
             yPos = 15;
@@ -1994,7 +2076,7 @@
           doc.setFont(undefined, "bold");
           doc.setFillColor(230, 230, 230);
           doc.rect(margin, yPos - 3.5, pageWidth - 2 * margin, 5.5, "F");
-          doc.text(`${si + 1}. ${sec.title}`, margin + 2, yPos);
+          doc.text(`${displayIndex + 1}. ${sec.title}`, margin + 2, yPos);
           yPos += 7;
 
           // Section items
@@ -2009,7 +2091,7 @@
               pageNum++;
             }
 
-            const key = `${si}_${ii}`;
+            const key = `${originalIndex}_${ii}`;
             const isChecked = !!h.checks?.[key];
             const prefix = isChecked ? "[X]" : "[ ]";
 
@@ -2113,6 +2195,8 @@
           if (el.tagName === "INPUT") el.value = "";
           else el.selectedIndex = 0;
         });
+        // Show start date field by default
+        document.getElementById("start-date-field").style.display = "flex";
         document.getElementById("modal").classList.add("open");
         setTimeout(() => document.getElementById("m-name").focus(), 80);
       }
@@ -2161,6 +2245,18 @@
       document.getElementById("modal").addEventListener("click", function (e) {
         if (e.target === this) closeModal();
       });
+
+      // Toggle start date field based on employee type
+      document
+        .getElementById("m-emp-type")
+        .addEventListener("change", function () {
+          const startDateField = document.getElementById("start-date-field");
+          if (this.value === "Existing Employee") {
+            startDateField.style.display = "none";
+          } else {
+            startDateField.style.display = "flex";
+          }
+        });
 
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") closeModal();
