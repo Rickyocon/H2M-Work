@@ -165,6 +165,7 @@
         transition: all 0.15s;
         overflow: hidden;
         position: relative;
+        min-width: 0;
       }
 
       .hire-item:hover {
@@ -181,6 +182,7 @@
         flex: 1;
         padding: 10px 12px;
         min-width: 0;
+        overflow: hidden;
       }
 
       .hire-name {
@@ -201,17 +203,16 @@
         color: var(--text-faint);
         font-family: var(--mono);
         margin-top: 4px;
-        word-break: break-word;
-        overflow-wrap: break-word;
-        line-height: 1.5;
+        line-height: 1.6;
       }
 
       .meta-line {
         font-size: 11px;
         color: var(--text-faint);
-        margin: 2px 0;
-        display: flex;
-        flex-wrap: wrap;
+        margin: 1px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .hire-progress-bar {
