@@ -1499,6 +1499,10 @@
           items: [
             { text: "Assign PC Name", note: "" },
             { text: "Move Device to Correct OU", note: "" },
+            {
+              text: "Set workstation extensionAttribute1 in AD",
+              note: "Value must match the office designation for the OU (Boca, Central Jersey, Connecticut, Common, Core, IT, Melville, NYC, Parsippany, Remote, Spare, Suffern, Troy, Westchester, Intern)",
+            },
             { text: "Log into OneDrive", note: "" },
           ],
         },
