@@ -14,8 +14,12 @@ Scopes needed:
 - DeviceManagementManagedDevices.Read.All
 #>
 
+
+
 # -------------------------
 # Require PowerShell 7+
+# !!!!!!!!!!!you must run this in your terminal first : Connect-MgGraph -Scopes Device.ReadWrite.All,DeviceManagementManagedDevices.Read.All
+# youll be promted to sign in, use your admin account
 # -------------------------
 if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {
     throw "Run this script in PowerShell 7 (pwsh)."
@@ -24,7 +28,7 @@ if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt
 # -------------------------
 # CONFIG
 # -------------------------
-$SearchBaseOU   = "OU=Melville,OU=Workstations,OU=Entra Synced,DC=h2m,DC=com"
+$SearchBaseOU   = "CHNAGE THIS TO YOUR TARGET OU"
 $OnlyEnabled    = $true
 $AttributeName  = "extensionAttribute1"
 
@@ -95,6 +99,8 @@ Write-Host "Found $($adComputers.Count) AD computers.`n"
 # PROCESS + UPDATE
 # -------------------------
 $results = foreach ($c in $adComputers) {
+
+    Write-Host "Processing $($c.Name)..." -ForegroundColor DarkGray
 
     $ouName = Get-FirstOuFromDn -DN $c.DistinguishedName
     $tag    = if ($ouName) { Get-TagForOu -OuName $ouName } else { $null }
