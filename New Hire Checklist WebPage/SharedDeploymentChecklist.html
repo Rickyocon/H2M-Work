@@ -1,0 +1,3904 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laptop Deployment Checklist</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://alcdn.msauth.net/browser/2.30.0/ms-browser-client-4.4.1.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Base backgrounds (slightly warmed to match palette) */
+        --bg: #121414;
+        --surface: #1e2326;
+        --surface-alt: #2a3034;
+
+        /* Borders */
+        --border: #3a3f42;
+        --border-light: #4a5054;
+
+        /* Text */
+        --text: #e6e6e3;
+        --text-muted: #a1a1a1;
+        --text-faint: #6f6f6f;
+
+        /* New main palette roles */
+        --accent: #99ae48; /* primary (green) */
+        --accent-dark: #7f913a;
+        --accent-light: #b7c76a;
+
+        --secondary: #608ca5; /* cool contrast (blue) */
+        --secondary-light: #7aa6bf;
+        --secondary-dark: #4e7488;
+
+        --neutral-accent: #564d48; /* earthy anchor */
+
+        /* Semantic colors (tuned to match palette) */
+        --success: #99ae48;
+        --danger: #d65c5c;
+        --danger-bg: rgba(214, 92, 92, 0.1);
+        --danger-border: rgba(214, 92, 92, 0.3);
+        --warning: #d4a373;
+
+        /* Info uses the blue now */
+        --info-bg: rgba(96, 140, 165, 0.12);
+        --info-border: rgba(96, 140, 165, 0.35);
+
+        /* Typography & layout */
+        --mono: "Fira Code", monospace;
+        --sans: "Space Grotesk", sans-serif;
+        --radius: 8px;
+        --radius-lg: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        font-size: 14px;
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      .app {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 300px;
+        min-width: 300px;
+        background: linear-gradient(
+          180deg,
+          var(--surface) 0%,
+          var(--surface-alt) 100%
+        );
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        overflow: hidden;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .sidebar-header {
+        padding: 24px 18px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      .sidebar-header h1 {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sidebar-header h1::before {
+        content: "⚙️";
+        font-size: 16px;
+      }
+
+      .new-hire-btn {
+        width: 100%;
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent-light) 100%
+        );
+        color: var(--bg);
+        border: none;
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        font-family: var(--sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 217, 255, 0.2);
+      }
+
+      .new-hire-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 217, 255, 0.3);
+      }
+
+      .new-hire-btn:active {
+        transform: translateY(0);
+      }
+
+      .hire-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 10px;
+      }
+
+      .hire-item {
+        display: flex;
+        align-items: center;
+        border-radius: var(--radius);
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: all 0.15s;
+        overflow: hidden;
+        position: relative;
+        min-width: 0;
+      }
+
+      .hire-item:hover {
+        background: var(--surface-alt);
+      }
+
+      .hire-item.active {
+        background: var(--info-bg);
+        border-left: 3px solid var(--accent);
+        padding-left: 7px;
+      }
+
+      .hire-item-inner {
+        flex: 1;
+        padding: 10px 12px;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .hire-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .hire-item.active .hire-name {
+        color: var(--accent);
+      }
+
+      .hire-meta {
+        font-size: 11px;
+        color: var(--text-faint);
+        font-family: var(--mono);
+        margin-top: 4px;
+        line-height: 1.6;
+      }
+
+      .meta-line {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin: 1px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .hire-progress-bar {
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin-top: 6px;
+        overflow: hidden;
+      }
+
+      .hire-progress-fill {
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-light));
+        border-radius: 2px;
+        transition: width 0.3s ease;
+      }
+
+      .hire-del {
+        padding: 6px 8px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--text-faint);
+        font-size: 14px;
+        border-radius: var(--radius);
+        opacity: 0;
+        transition: all 0.15s;
+        flex-shrink: 0;
+      }
+
+      .hire-item:hover .hire-del {
+        opacity: 1;
+      }
+
+      .hire-del:hover {
+        color: var(--danger);
+        background: var(--danger-bg);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--text-faint);
+        font-size: 12px;
+        line-height: 1.8;
+      }
+
+      .sidebar-footer {
+        padding: 12px 18px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+      }
+
+      .entra-btn {
+        flex: 1;
+        background: var(--surface);
+        color: var(--text-muted);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius);
+        padding: 8px 12px;
+        font-family: var(--sans);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .entra-btn:hover {
+        background: var(--border-light);
+        border-color: var(--secondary);
+        color: var(--secondary);
+      }
+
+      .entra-btn.signed-in {
+        background: rgba(96, 140, 165, 0.15);
+        border-color: var(--secondary);
+        color: var(--secondary);
+      }
+
+      .search-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+      }
+
+      .search-modal-overlay.open {
+        display: flex;
+      }
+
+      .search-modal {
+        background: var(--surface-alt);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        width: 550px;
+        max-width: 95vw;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .search-modal h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--secondary);
+      }
+
+      .search-modal-subtitle {
+        font-size: 12px;
+        color: var(--text-faint);
+        margin-bottom: 20px;
+        font-family: var(--mono);
+      }
+
+      .search-box {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .search-box input {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        font-family: var(--sans);
+        font-size: 13px;
+        color: var(--text);
+        background: var(--surface);
+        outline: none;
+        transition: all 0.2s;
+      }
+
+      .search-box input:focus {
+        border-color: var(--secondary);
+        box-shadow: 0 0 0 3px rgba(96, 140, 165, 0.1);
+      }
+
+      .search-box button {
+        background: var(--secondary);
+        color: white;
+        border: none;
+        border-radius: var(--radius);
+        padding: 10px 16px;
+        font-family: var(--sans);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .search-box button:hover {
+        opacity: 0.9;
+      }
+
+      .search-results {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+
+      .search-result-item {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .search-result-item:last-child {
+        border-bottom: none;
+      }
+
+      .search-result-item:hover {
+        background: var(--surface-alt);
+      }
+
+      .search-result-name {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .search-result-meta {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-top: 2px;
+        font-family: var(--mono);
+      }
+
+      .search-loading {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-faint);
+      }
+
+      .search-empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 12px;
+      }
+
+      .search-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      /* Main */
+      .main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 32px 40px;
+        max-width: 900px;
+      }
+
+      .no-hire {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        color: var(--text-faint);
+        text-align: center;
+        gap: 12px;
+      }
+
+      .no-hire .icon {
+        font-size: 56px;
+        margin-bottom: 12px;
+        animation: float 3s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .no-hire h2 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
+      .no-hire p {
+        font-size: 13px;
+        color: var(--text-faint);
+      }
+
+      .hire-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        gap: 16px;
+      }
+
+      .hire-title-wrap {
+        flex: 1;
+      }
+
+      .hire-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 6px;
+      }
+
+      .hire-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        font-family: var(--mono);
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        border: 1px solid var(--border-light);
+        background: var(--surface-alt);
+        color: var(--text-muted);
+        border-radius: var(--radius);
+        padding: 8px 14px;
+        font-family: var(--sans);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .btn:hover {
+        background: var(--border-light);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn.danger:hover {
+        background: var(--danger-bg);
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+
+      .btn.export {
+        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        border: none;
+        color: white;
+      }
+
+      .btn.export:hover {
+        background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      }
+
+      .progress-card {
+        background: linear-gradient(
+          135deg,
+          var(--surface) 0%,
+          var(--surface-alt) 100%
+        );
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        box-shadow: 0 4px 12px rgba(0, 217, 255, 0.05);
+      }
+
+      .progress-stats {
+        flex: 1;
+      }
+
+      svg.ring {
+        display: block;
+        filter: drop-shadow(0 2px 4px rgba(0, 217, 255, 0.1));
+      }
+
+      .progress-fraction {
+        font-family: var(--mono);
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .progress-label {
+        font-size: 12px;
+        color: var(--text-faint);
+        margin-top: 2px;
+      }
+
+      .phase-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+      }
+
+      .phase-pill {
+        font-size: 10px;
+        font-family: var(--mono);
+        border-radius: 4px;
+        padding: 4px 10px;
+        border: 1px solid var(--border);
+        color: var(--text-faint);
+        background: transparent;
+      }
+
+      .phase-pill.done {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: var(--success);
+        color: var(--success);
+      }
+
+      .section {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        margin-bottom: 12px;
+        overflow: hidden;
+        transition: all 0.2s;
+      }
+
+      .section:hover {
+        border-color: var(--border-light);
+        box-shadow: 0 2px 8px rgba(0, 217, 255, 0.08);
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid transparent;
+        transition: all 0.1s;
+      }
+
+      .section-header:hover {
+        background: var(--surface);
+      }
+
+      .section.open .section-header {
+        border-bottom-color: var(--border);
+      }
+
+      .section-num {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+        width: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        flex: 1;
+      }
+
+      .section-badge {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 4px;
+        background: var(--surface);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+      }
+
+      .section-badge.done {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+        border-color: var(--success);
+      }
+
+      .chevron {
+        font-size: 10px;
+        color: var(--text-faint);
+        transition: transform 0.2s;
+      }
+
+      .section.open .chevron {
+        transform: rotate(90deg);
+      }
+
+      .section-body {
+        display: none;
+      }
+
+      .section.open .section-body {
+        display: block;
+      }
+
+      .check-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 11px 16px 11px 48px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: all 0.1s;
+      }
+
+      .check-item:last-child {
+        border-bottom: none;
+      }
+
+      .check-item:hover {
+        background: var(--surface);
+      }
+
+      .check-item input[type="checkbox"] {
+        margin-top: 2px;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: var(--accent);
+        flex-shrink: 0;
+      }
+
+      .check-text {
+        flex: 1;
+      }
+
+      .check-label {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      .check-label.done {
+        text-decoration: line-through;
+        color: var(--text-faint);
+      }
+
+      .check-note {
+        font-size: 11px;
+        color: var(--text-faint);
+        font-family: var(--mono);
+        margin-top: 3px;
+        line-height: 1.5;
+      }
+
+      .notes-section {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        margin-top: 24px;
+        overflow: hidden;
+      }
+
+      .notes-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .notes-header span {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-faint);
+      }
+
+      textarea.notes {
+        width: 100%;
+        border: none;
+        outline: none;
+        resize: vertical;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--text);
+        background: var(--surface-alt);
+        padding: 14px 16px;
+        min-height: 100px;
+        line-height: 1.6;
+        transition: all 0.2s;
+      }
+
+      textarea.notes:focus {
+        background: var(--surface);
+        outline: 1px solid var(--accent);
+      }
+
+      .complete-banner {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.1) 0%,
+          rgba(16, 185, 129, 0.05) 100%
+        );
+        border: 1px solid var(--success);
+        border-radius: var(--radius);
+        padding: 12px 16px;
+        font-size: 13px;
+        color: var(--success);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+      }
+
+      /* Modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+      }
+
+      .modal-overlay.open {
+        display: flex;
+      }
+
+      .modal {
+        background: var(--surface-alt);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        width: 500px;
+        max-width: 95vw;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--accent);
+      }
+
+      .modal-subtitle {
+        font-size: 12px;
+        color: var(--text-faint);
+        margin-bottom: 20px;
+        font-family: var(--mono);
+      }
+
+      .field {
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: var(--mono);
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        font-family: var(--sans);
+        font-size: 13px;
+        color: var(--text);
+        background: var(--surface);
+        outline: none;
+        transition: all 0.2s;
+      }
+
+      .field input:focus,
+      .field select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+      }
+
+      input[type="date"] {
+        position: relative;
+        width: 100%;
+        font-family: var(--sans);
+      }
+
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.7;
+        transition: 0.2s;
+      }
+
+      input[type="date"]:hover::-webkit-calendar-picker-indicator {
+        opacity: 1;
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent-light) 100%
+        );
+        color: var(--bg);
+        border: none;
+        border-radius: var(--radius);
+        padding: 10px 18px;
+        font-family: var(--sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
+      }
+
+      .info-banner {
+        background: var(--info-bg);
+        border: 1px solid var(--info-border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        font-size: 12px;
+        color: var(--accent);
+        margin-bottom: 16px;
+        line-height: 1.6;
+      }
+
+      .info-banner strong {
+        font-weight: 600;
+      }
+
+      /* Deployment status badge */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+        border: 1px solid var(--border-light);
+        background: var(--surface);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .status-badge::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text-faint);
+      }
+      .status-pending::before { background: var(--text-faint); }
+      .status-progress { color: var(--secondary); border-color: var(--secondary); }
+      .status-progress::before { background: var(--secondary); }
+      .status-ready { color: var(--warning); border-color: var(--warning); }
+      .status-ready::before { background: var(--warning); }
+      .status-deployed { color: var(--success); border-color: var(--success); background: rgba(153,174,72,0.08); }
+      .status-deployed::before { background: var(--success); }
+      .status-hold { color: var(--danger); border-color: var(--danger); }
+      .status-hold::before { background: var(--danger); }
+      .status-returned { color: var(--neutral-accent); border-color: var(--neutral-accent); }
+      .status-returned::before { background: var(--neutral-accent); }
+
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+        align-items: center;
+      }
+
+      /* Replacement / reassignment card */
+      .replace-card {
+        background: var(--surface-alt);
+        border: 1px solid var(--warning);
+        border-left: 4px solid var(--warning);
+        border-radius: var(--radius-lg);
+        padding: 14px 16px;
+        margin-bottom: 16px;
+      }
+      .replace-card h3 {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--warning);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-family: var(--mono);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .replace-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px 16px;
+      }
+      .replace-grid .rg-label {
+        font-size: 10px;
+        font-family: var(--mono);
+        color: var(--text-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .replace-grid .rg-value {
+        font-size: 13px;
+        color: var(--text);
+        margin-top: 2px;
+        word-break: break-word;
+      }
+      .replace-card select,
+      .replace-card input {
+        width: 100%;
+        margin-top: 4px;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 6px 8px;
+        font-family: var(--sans);
+        font-size: 12px;
+        outline: none;
+      }
+      .replace-card select:focus,
+      .replace-card input:focus {
+        border-color: var(--warning);
+      }
+
+      .file-input-hidden {
+        display: none;
+      }
+
+      /* ----- Shared Sync Bar ----- */
+      .sync-bar {
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .sync-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .sync-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-faint);
+        flex-shrink: 0;
+      }
+      .sync-dot.live {
+        background: var(--success);
+        box-shadow: 0 0 0 0 rgba(153, 174, 72, 0.5);
+        animation: sync-pulse 2.5s infinite;
+      }
+      .sync-dot.error { background: var(--danger); }
+      .sync-dot.syncing {
+        background: var(--secondary);
+        animation: sync-pulse 1s infinite;
+      }
+      @keyframes sync-pulse {
+        0%   { box-shadow: 0 0 0 0 rgba(153, 174, 72, 0.55); }
+        70%  { box-shadow: 0 0 0 8px rgba(153, 174, 72, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(153, 174, 72, 0); }
+      }
+      .sync-meta {
+        font-size: 10px;
+        color: var(--text-faint);
+        font-family: var(--mono);
+        word-break: break-all;
+        line-height: 1.4;
+      }
+      .sync-actions {
+        display: flex;
+        gap: 6px;
+      }
+      .sync-actions .entra-btn {
+        flex: 1;
+        padding: 6px 8px;
+        font-size: 10px;
+      }
+
+      .toast-stack {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 360px;
+      }
+      .toast {
+        background: var(--surface-alt);
+        border: 1px solid var(--border-light);
+        border-left: 4px solid var(--secondary);
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        font-size: 12px;
+        line-height: 1.5;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        animation: toast-in 0.2s ease-out;
+      }
+      .toast.success { border-left-color: var(--success); }
+      .toast.warn    { border-left-color: var(--warning); }
+      .toast.error   { border-left-color: var(--danger); }
+      @keyframes toast-in {
+        from { transform: translateX(20px); opacity: 0; }
+        to   { transform: translateX(0); opacity: 1; }
+      }
+
+      /* View tabs */
+      .view-tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 24px;
+      }
+      .view-tab {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 10px 18px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .view-tab:hover { color: var(--text); }
+      .view-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+      .view-tab .badge {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-faint);
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 8px;
+      }
+      .view-tab.active .badge {
+        background: var(--info-bg);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* Tracker board */
+      .tracker-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+        align-items: center;
+      }
+      .tracker-toolbar input,
+      .tracker-toolbar select {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 8px 10px;
+        font-family: var(--sans);
+        font-size: 12px;
+        outline: none;
+      }
+      .tracker-toolbar input:focus,
+      .tracker-toolbar select:focus { border-color: var(--accent); }
+      .tracker-toolbar input { min-width: 220px; flex: 1; }
+
+      .tracker-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .tracker-stat {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+      }
+      .tracker-stat .num {
+        font-family: var(--mono);
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1.1;
+      }
+      .tracker-stat .lbl {
+        font-size: 10px;
+        color: var(--text-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-family: var(--mono);
+        margin-top: 4px;
+      }
+
+      .tracker-table-wrap {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+      }
+      .tracker-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .tracker-table th {
+        background: var(--surface);
+        color: var(--text-faint);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      .tracker-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+        vertical-align: middle;
+      }
+      .tracker-table tbody tr {
+        cursor: pointer;
+        transition: background 0.1s;
+      }
+      .tracker-table tbody tr:hover { background: var(--surface); }
+      .tracker-table tbody tr.active-row { background: var(--info-bg); }
+      .tracker-table tbody tr:last-child td { border-bottom: none; }
+      .tracker-table .pc-cell {
+        font-family: var(--mono);
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .tracker-table .empty {
+        text-align: center;
+        color: var(--text-faint);
+        padding: 36px 16px;
+      }
+      .mini-progress {
+        position: relative;
+        width: 80px;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .mini-progress > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      }
+      .mini-progress-text {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-faint);
+        margin-top: 2px;
+      }
+      .tech-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+      }
+      .tech-cell::before {
+        content: "  ";
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--secondary-dark);
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        text-align: center;
+        line-height: 18px;
+        font-family: var(--mono);
+      }
+
+      @media (max-width: 900px) {
+        .sidebar {
+          width: 260px;
+          min-width: 260px;
+        }
+        .main {
+          padding: 24px 20px;
+          max-width: 100%;
+        }
+        .header-actions {
+          gap: 6px;
+        }
+        .btn {
+          padding: 6px 10px;
+          font-size: 11px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .app {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+          position: relative;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        .sidebar-header {
+          padding: 16px;
+        }
+        .hire-list {
+          max-height: 200px;
+        }
+        .main {
+          padding: 20px;
+        }
+        .hire-header {
+          flex-direction: column;
+        }
+        .header-actions {
+          width: 100%;
+          justify-content: stretch;
+        }
+        .btn {
+          flex: 1;
+        }
+      }
+
+      /* Prevent elements from being split across pages */
+      .section,
+      .progress-card,
+      .notes-section {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      /* Optional: keep headers with their content */
+      .section-header {
+        page-break-after: avoid;
+        break-after: avoid;
+      }
+
+      /* Print styles */
+      @media print {
+        .sidebar,
+        .header-actions,
+        .new-hire-btn {
+          display: none;
+        }
+        .main {
+          padding: 0;
+          max-width: 100%;
+        }
+        .section {
+          page-break-inside: avoid;
+        }
+        body {
+          background: white;
+          color: black;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1>Deployment</h1>
+          <button
+            class="new-hire-btn"
+            id="new-hire-btn"
+            onclick="handleNewHireClick()"
+          >
+            <span>+</span> New Deployment
+          </button>
+        </div>
+        <div class="hire-list" id="hire-list"></div>
+
+        <!-- Shared sync status (File System Access API) -->
+        <div class="sync-bar" id="sync-bar">
+          <div class="sync-status" id="sync-status" title="Click to refresh">
+            <span class="sync-dot" id="sync-dot"></span>
+            <span class="sync-text" id="sync-text">Local only</span>
+          </div>
+          <div class="sync-meta" id="sync-meta">Not connected to share</div>
+          <div class="sync-actions">
+            <button class="entra-btn" id="connect-btn" onclick="connectSharedFile()">Connect Share</button>
+            <button class="entra-btn" id="refresh-btn" onclick="manualRefresh()" style="display:none" title="Pull latest changes">↻</button>
+            <button class="entra-btn" id="disconnect-btn" onclick="disconnectShared()" style="display:none" title="Disconnect from shared file">✕</button>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <button class="entra-btn" title="Export all data as JSON backup" onclick="exportBackup()">Backup</button>
+          <button class="entra-btn" title="Import a JSON backup file" onclick="document.getElementById('restore-input').click()">Restore</button>
+          <input type="file" id="restore-input" class="file-input-hidden" accept="application/json,.json" onchange="importBackup(event)" />
+        </div>
+      </aside>
+
+      <main class="main" id="main">
+        <div class="no-hire">
+          <div class="icon">💻</div>
+          <h2>No deployment selected</h2>
+          <p>
+            Create a new deployment record to begin<br />the laptop setup and
+            configuration checklist.
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <!-- New Deployment Modal -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal">
+        <h2>New laptop deployment</h2>
+        <p class="modal-subtitle">Fill in employee and device information</p>
+
+        <div class="field">
+          <label>Employee Name</label>
+          <input
+            type="text"
+            id="m-name"
+            placeholder="Jane Smith"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label>Department</label>
+          <select id="m-dept">
+            <option value="">Select Department</option>
+            <option value="Executive">Executive</option>
+            <option value="Human Resources">Human Resources</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Finance">Finance</option>
+            <option value="Information Technology">
+              Information Technology
+            </option>
+            <option value="Legal">Legal</option>
+            <option value="Facilities">Facilities</option>
+            <option value="Core">Core</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Architecture">Architecture</option>
+            <option value="Water">Water</option>
+            <option value="Environmental">Environmental</option>
+            <option value="Civil-Survey">Civil-Survey</option>
+            <option value="Inspector Field">Inspector Field</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Employee Email</label>
+          <input
+            type="text"
+            id="m-email"
+            placeholder="JDoe@H2M.com"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label>Office Location</label>
+          <select id="m-office">
+            <option value="">Select Office</option>
+            <option value="Melville">Melville</option>
+            <option value="Parsippany">Parsippany</option>
+            <option value="NYC">NYC</option>
+            <option value="Suffern">Suffern</option>
+            <option value="Troy">Troy</option>
+            <option value="Boca">Boca</option>
+            <option value="Wall">Wall (Central New Jersey)</option>
+            <option value="Westchester">Westchester</option>
+            <option value="Windsor">Windsor</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>PC Name</label>
+          <input
+            type="text"
+            id="m-pc-name"
+            placeholder="DEV-001"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label>Employee Type</label>
+          <select id="m-emp-type">
+            <option value="">Select Type</option>
+            <option value="New Hire">New Hire (Employee)</option>
+            <option value="Existing Employee">Existing Employee</option>
+            <option value="Intern">Intern</option>
+            <option value="Contractor">Contractor</option>
+          </select>
+        </div>
+
+        <div class="field" id="start-date-field">
+          <label>Start Date</label>
+          <input type="date" id="m-start" />
+        </div>
+
+        <div class="field">
+          <label>Device Type</label>
+          <select id="m-device-type">
+            <option value="">Select Type</option>
+            <option value="New">New Device</option>
+            <option value="Replacement">Replacement Device</option>
+            <option value="Redeployment">Redeployment</option>
+            <option value="Loaner">Loaner</option>
+            <option value="Rendering">Rendering Workstation</option>
+            <option value="Wipe/Reset">Wipe/Reset</option>
+          </select>
+        </div>
+
+        <!-- Replacement-only fields -->
+        <div id="replacement-fields" style="display:none">
+          <div class="info-banner" style="margin-bottom:12px">
+            <strong>Replacement Device:</strong> Track the old device so it can be wiped, retired, or reassigned.
+          </div>
+          <div class="field">
+            <label>Old PC Name (being replaced)</label>
+            <input type="text" id="m-old-pc" placeholder="OLD-PC-001" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label>Replacement Reason</label>
+            <select id="m-replace-reason">
+              <option value="">Select Reason</option>
+              <option value="End of Life">End of Life / Lifecycle</option>
+              <option value="Hardware Failure">Hardware Failure</option>
+              <option value="Performance Upgrade">Performance Upgrade</option>
+              <option value="Damage">Physical Damage</option>
+              <option value="Lost/Stolen">Lost / Stolen</option>
+              <option value="Role Change">Role Change</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Old Device Disposition</label>
+            <select id="m-old-disposition">
+              <option value="Pending">Pending Pickup</option>
+              <option value="Returned to IT">Returned to IT</option>
+              <option value="Awaiting Wipe">Awaiting Wipe</option>
+              <option value="Wiped">Wiped</option>
+              <option value="Awaiting Reassignment">Awaiting Reassignment</option>
+              <option value="Reassigned">Reassigned</option>
+              <option value="Retired">Retired / Recycled</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Reassigned To (employee name, if applicable)</label>
+            <input type="text" id="m-reassigned-to" placeholder="e.g. John Doe" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Assigned Technician</label>
+          <input
+            type="text"
+            id="m-tech"
+            placeholder="e.g. Phil Joseph"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label>Deployment Status</label>
+          <select id="m-status">
+            <option value="Pending Setup">Pending Setup</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Ready for Deployment">Ready for Deployment</option>
+            <option value="Deployed">Deployed</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Returned">Returned</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn-primary" onclick="createHire()">
+            Create Checklist
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Search Modal -->
+    <div class="search-modal-overlay" id="search-modal">
+      <div class="search-modal">
+        <h2>Search Entra User</h2>
+        <p class="search-modal-subtitle">Find user to auto-populate form</p>
+
+        <div class="search-box">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search by name or email..."
+            autocomplete="off"
+            onkeyup="if (event.key === 'Enter') searchEntraUsers();"
+          />
+          <button onclick="searchEntraUsers()">Search</button>
+        </div>
+
+        <div class="search-results" id="search-results" style="display: none">
+          <div class="search-empty">No results</div>
+        </div>
+
+        <div class="search-modal-actions">
+          <button class="btn" onclick="closeUserSearchModal()">Close</button>
+          <button class="btn-primary" onclick="continueWithoutUser()">
+            Continue Without User
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast notifications (sync events, conflicts, etc.) -->
+    <div class="toast-stack" id="toast-stack"></div>
+
+    <div class="modal-overlay" id="reset-modal">
+      <div class="modal">
+        <h2>Reset Deployment</h2>
+        <p>
+          Are you sure you want to reset all checkboxes for this deployment?
+          This action cannot be undone.
+        </p>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+          "
+        >
+          <button class="btn" onclick="closeResetModal()">Cancel</button>
+          <button class="btn danger" onclick="confirmReset()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="delete-modal">
+      <div class="modal">
+        <h2>Delete Deployment</h2>
+        <p id="delete-modal-message">
+          Are you sure you want to delete this deployment? This action cannot be
+          undone.
+        </p>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+          "
+        >
+          <button class="btn" onclick="closeDeleteModal()">Cancel</button>
+          <button class="btn danger" onclick="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ============================================================
+      // SETUP INSTRUCTIONS
+      // ============================================================
+      // 1. Register an Azure AD Application:
+      //    - Go to: https://portal.azure.com
+      //    - Search for "App registrations" and select it
+      //    - Click "+ New registration"
+      //    - Name it "H2M Laptop Checklist"
+      //    - Select "Accounts in this organizational directory only"
+      //    - For Redirect URI: Select "Single-page application (SPA)"
+      //      and enter: http://localhost:8000 (or your deployed URL)
+      //    - Click "Register"
+      //
+      // 2. Copy your Client ID (Application ID)
+      //    - Go to "Overview" tab
+      //    - Copy "Application (client) ID"
+      //    - Paste it below in the MSAL config
+      //
+      // 3. Get your Tenant ID
+      //    - Also on "Overview" tab
+      //    - Copy "Directory (tenant) ID"
+      //    - Paste it below
+      //
+      // 4. Grant API permissions:
+      //    - Click "API permissions" in left menu
+      //    - Click "+ Add a permission"
+      //    - Select "Microsoft Graph"
+      //    - Select "Delegated permissions"
+      //    - Search for and add: User.Read, User.ReadBasic.All
+      //    - Click "Add permissions"
+      //
+      // 5. Replace YOUR_CLIENT_ID and YOUR_TENANT_ID below
+      //
+      // ============================================================
+      // MSAL Configuration
+      // ============================================================
+      const msalConfig = {
+        auth: {
+          clientId: "YOUR_CLIENT_ID", // Replace with your Application (client) ID
+          authority: "https://login.microsoftonline.com/YOUR_TENANT_ID", // Replace with your Directory (tenant) ID
+          redirectUri: window.location.origin,
+        },
+        cache: {
+          cacheLocation: "localStorage",
+          storeAuthStateInCookie: false,
+        },
+      };
+
+      const graphScopes = ["user.read", "user.readbasic.all"];
+      let msalInstance = null;
+      let msalAccount = null;
+
+      // Initialize MSAL
+      async function initMsal() {
+        msalInstance = new msal.PublicClientApplication(msalConfig);
+        try {
+          await msalInstance.initialize();
+          const accounts = msalInstance.getAllAccounts();
+          if (accounts.length > 0) {
+            msalAccount = accounts[0];
+            updateEntraUI(true);
+          }
+        } catch (error) {
+          console.error("MSAL initialization error:", error);
+        }
+      }
+
+      function updateEntraUI(isSignedIn) {
+        const entraBtn = document.getElementById("entra-btn");
+        const searchBtn = document.getElementById("search-user-btn");
+        if (isSignedIn) {
+          entraBtn.textContent = "Sign Out";
+          entraBtn.classList.add("signed-in");
+          searchBtn.style.display = "block";
+        } else {
+          entraBtn.textContent = "Sign In";
+          entraBtn.classList.remove("signed-in");
+          searchBtn.style.display = "none";
+        }
+      }
+
+      async function loginWithEntra() {
+        if (!msalInstance) await initMsal();
+
+        if (msalAccount) {
+          // Sign out
+          await msalInstance.logoutPopup();
+          msalAccount = null;
+          updateEntraUI(false);
+        } else {
+          // Sign in
+          try {
+            const result = await msalInstance.loginPopup({
+              scopes: graphScopes,
+            });
+            msalAccount = result.account;
+            updateEntraUI(true);
+          } catch (error) {
+            console.error("Login error:", error);
+            alert("Failed to sign in. Check console for details.");
+          }
+        }
+      }
+
+      async function searchEntraUsers() {
+        if (!msalAccount) {
+          alert("Please sign in first");
+          return;
+        }
+
+        const searchTerm = document.getElementById("search-input").value.trim();
+        if (!searchTerm) {
+          alert("Enter a name or email to search");
+          return;
+        }
+
+        const resultsDiv = document.getElementById("search-results");
+        resultsDiv.innerHTML = '<div class="search-loading">Searching...</div>';
+        resultsDiv.style.display = "block";
+
+        try {
+          const token = await msalInstance.acquireTokenSilent({
+            scopes: graphScopes,
+            account: msalAccount,
+          });
+          const response = await fetch(
+            `https://graph.microsoft.com/v1.0/users?$filter=startswith(displayName,'${searchTerm}') or startswith(userPrincipalName,'${searchTerm}') or startswith(mail,'${searchTerm}')&$select=id,displayName,mail,department,officeLocation,jobTitle,mobilePhone,telephoneNumber,employeeId,companyName`,
+            { headers: { Authorization: `Bearer ${token.accessToken}` } },
+          );
+
+          if (!response.ok) throw new Error("Search failed");
+          const data = await response.json();
+
+          if (data.value.length === 0) {
+            resultsDiv.innerHTML =
+              '<div class="search-empty">No users found</div>';
+          } else {
+            resultsDiv.innerHTML = data.value
+              .map(
+                (user) => `
+              <div class="search-result-item" onclick="selectEntraUser(${JSON.stringify(user).replace(/"/g, "&quot;")})">
+                <div class="search-result-name">${esc(user.displayName)}</div>
+                <div class="search-result-meta">${esc(user.mail || "")} • ${esc(user.jobTitle || "")}</div>
+              </div>
+            `,
+              )
+              .join("");
+          }
+        } catch (error) {
+          console.error("Search error:", error);
+          resultsDiv.innerHTML = `<div class="search-empty">Error: ${error.message}</div>`;
+        }
+      }
+
+      function selectEntraUser(user) {
+        // Map Entra fields to form fields
+        document.getElementById("m-name").value = user.displayName || "";
+        document.getElementById("m-email").value = user.mail || "";
+        document.getElementById("m-pc-name").value = user.employeeId
+          ? `${user.employeeId}-`
+          : "";
+
+        // Set department dropdown if it matches
+        const deptSelect = document.getElementById("m-dept");
+        if (user.department) {
+          for (let opt of deptSelect.options) {
+            if (opt.value.toLowerCase() === user.department.toLowerCase()) {
+              deptSelect.value = opt.value;
+              break;
+            }
+          }
+        }
+
+        // Set office dropdown if it matches
+        const officeSelect = document.getElementById("m-office");
+        if (user.officeLocation) {
+          for (let opt of officeSelect.options) {
+            if (
+              opt.value
+                .toLowerCase()
+                .includes(user.officeLocation.toLowerCase()) ||
+              user.officeLocation
+                .toLowerCase()
+                .includes(opt.value.toLowerCase())
+            ) {
+              officeSelect.value = opt.value;
+              break;
+            }
+          }
+        }
+
+        closeUserSearchModal();
+      }
+
+      function openUserSearchModal() {
+        document.getElementById("search-modal").classList.add("open");
+        document.getElementById("search-input").value = "";
+        document.getElementById("search-results").style.display = "none";
+        setTimeout(() => document.getElementById("search-input").focus(), 80);
+      }
+
+      function closeUserSearchModal() {
+        document.getElementById("search-modal").classList.remove("open");
+      }
+
+      function continueWithoutUser() {
+        closeUserSearchModal();
+        openNewHireModal();
+      }
+
+      document
+        .getElementById("search-modal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeUserSearchModal();
+        });
+      // ============================================================
+      // Checklist Sections Data
+      // ============================================================
+      const SECTIONS = [
+        {
+          title: "New Account Setup",
+          items: [
+            { text: "Create User AD account", note: "" },
+            { text: "Enable Microsoft Exchange Mailbox settings", note: "" },
+            { text: "Assign DID in RingCentral Admin Console", note: "" },
+          ],
+        },
+        {
+          title: "Pre-Device Setup",
+          items: [
+            { text: "Helpdesk Ticket Created", note: "" },
+            { text: "Set Temporary Password", note: "Reset After Setup" },
+          ],
+        },
+        {
+          title: "Device Setup",
+          items: [
+            { text: "Assign PC Name", note: "" },
+            { text: "Move Device to Correct OU", note: "" },
+            {
+              text: "Set workstation extensionAttribute1 in AD",
+              note: "Value must match the office designation for the OU (Boca, Central Jersey, Connecticut, Common, Core, IT, Melville, NYC, Parsippany, Remote, Spare, Suffern, Troy, Westchester, Intern)",
+            },
+            { text: "Log into OneDrive", note: "" },
+          ],
+        },
+        {
+          title: "Intune Application Verification",
+          items: [
+            { text: "Splashtop", note: "" },
+            { text: "Newforma", note: "" },
+            { text: "BST11", note: "" },
+            { text: "Cisco VPN - Remove from startup app", note: "" },
+            { text: "Microsoft Edge", note: "" },
+            { text: "CrowdStrike", note: "" },
+            { text: "RingCentral", note: "" },
+            { text: "Dell Command Update", note: "" },
+            { text: "DNSfilter", note: "" },
+            {
+              text: "Foxit Reader / Foxit Editor / Bluebeam Core",
+              note: "",
+            },
+          ],
+        },
+        {
+          title: "Device Configuration",
+          items: [
+            { text: "Install and Set Default Printers", note: "" },
+            {
+              text: "Set Taskbar (Edge, File Explorer, Outlook, Teams, BST11)",
+              note: "",
+            },
+            { text: "Set Up Outlook", note: "" },
+            { text: "Install Windows Updates", note: "" },
+            { text: "Set Up Newforma", note: "" },
+            { text: "Install Dell Command Updates", note: "" },
+            { text: "Register Foxit/Bluebeam", note: "" },
+            { text: "Install Outstanding apps from Helpdesk Ticket", note: "" },
+            { text: "Set Taskbar Widgets Settings Off", note: "" },
+            { text: "Connect to H2M", note: "" },
+          ],
+        },
+        {
+          title: "Post Device Setup",
+          items: [
+            {
+              text: "Run IIS Crypto, Check off Best Practices, and Disable TLS 1.0 and 1.1",
+              note: "File Location: \\\\app-server\\apps\\_Microsoft Patches & Service packs\\iis crypto",
+            },
+            { text: "Verify Outlook license and accounts", note: "" },
+            { text: "Verify Bluebeam license", note: "" },
+            { text: "Verify RingCentral", note: "" },
+            { text: "Verify Foxit license", note: "" },
+            { text: "Verify Teams functionality", note: "" },
+            { text: "Dock is fully functional", note: "" },
+            { text: "Monitor orientation for local setups", note: "" },
+            { text: "Verify all peripherals (Headphones)", note: "" },
+          ],
+        },
+        {
+          title: "Computer List Status",
+          items: [
+            { text: "Deployed", note: "" },
+            {
+              text: "Add Device to PatchMyPC-Application-Updates-Devices group in Entra",
+              note: "",
+            },
+            {
+              text: "Add Device to AutoPatch Phase 2 Group in Entra/Intune",
+              note: "",
+            },
+            {
+              text: "Remove Device From Intune-Setup-Devices in Entra",
+              note: "",
+            },
+            {
+              text: "*For Structural Devices Only* Add Device to Softrack on mgnt-server",
+              note: "",
+            },
+            {
+              text: "*For Non Autopiloted Devices Only* Add Device to Intune-Static-Everybody-Devices group in Entra",
+              note: "",
+            },
+          ],
+        },
+      ];
+
+      const TOTAL_ITEMS = SECTIONS.reduce((a, s) => a + s.items.length, 0);
+
+      // ============================================================
+      // Discipline-Specific Applications
+      // Auto-added based on selected Department / Discipline.
+      // ============================================================
+      const DISCIPLINE_APPS = {
+        "Architecture": [
+          { text: "Install Autodesk Revit (current year)", note: "Autodesk Account / Network license" },
+          { text: "Install AutoCAD Architecture", note: "" },
+          { text: "Install Enscape", note: "License via Enscape portal" },
+          { text: "Install SketchUp Pro", note: "" },
+          { text: "Install Bluebeam Revu (Architectural workflow)", note: "" },
+        ],
+        "Civil-Survey": [
+          { text: "Install AutoCAD Civil 3D", note: "Required for Civil/Survey" },
+          { text: "Install Carlson Survey / Carlson Civil", note: "" },
+          { text: "Install Trimble Business Center", note: "For survey data processing" },
+          { text: "Install Bluebeam Revu", note: "" },
+        ],
+        "Electrical": [
+          { text: "Install AutoCAD Electrical", note: "" },
+          { text: "Install Revit MEP", note: "" },
+          { text: "Install SKM PowerTools", note: "License from network license server" },
+          { text: "Install ETAP (if applicable)", note: "" },
+        ],
+        "Water": [
+          { text: "Install Bentley WaterCAD / WaterGEMS", note: "" },
+          { text: "Install Bentley SewerCAD / SewerGEMS", note: "" },
+          { text: "Install AutoCAD", note: "" },
+          { text: "Install OpenFlows / StormCAD (if needed)", note: "" },
+        ],
+        "Environmental": [
+          { text: "Install ArcGIS Pro", note: "License via ArcGIS Online / portal" },
+          { text: "Install EQuIS", note: "For environmental data management" },
+          { text: "Install AutoCAD", note: "" },
+        ],
+        "Core": [
+          { text: "Install AutoCAD", note: "" },
+          { text: "Install Bluebeam Revu", note: "" },
+        ],
+        "Inspector Field": [
+          { text: "Install ProjectWise Explorer", note: "" },
+          { text: "Install Bluebeam Revu", note: "For field markups" },
+          { text: "Install Field Inspection app(s)", note: "Per project requirements" },
+          { text: "Configure mobile hotspot / VPN access", note: "" },
+        ],
+        "Information Technology": [
+          { text: "Install RSAT (Remote Server Administration Tools)", note: "" },
+          { text: "Install PowerShell 7 + ISE", note: "" },
+          { text: "Install PuTTY / WinSCP", note: "" },
+          { text: "Install Wireshark", note: "" },
+          { text: "Install Visual Studio Code", note: "" },
+        ],
+        "Finance": [
+          { text: "Install ERP / Accounting client (BST11, Deltek, etc.)", note: "" },
+          { text: "Configure Excel add-ins / Power Query", note: "" },
+        ],
+        "Human Resources": [
+          { text: "Install HRIS client / shortcut (ADP, Paylocity, etc.)", note: "" },
+        ],
+        "Marketing": [
+          { text: "Install Adobe Creative Cloud (InDesign, Photoshop, Illustrator)", note: "License via Adobe Admin Console" },
+        ],
+        "Legal": [
+          { text: "Install document management client", note: "" },
+        ],
+        "Facilities": [
+          { text: "Install AutoCAD LT", note: "" },
+        ],
+        "Executive": [],
+      };
+
+      // Returns the SECTIONS array tailored for a given hire (filters
+      // "New Account Setup" for existing employees, appends a discipline
+      // section when applicable).
+      function effectiveSections(h) {
+        const base = SECTIONS.filter(
+          (sec) =>
+            !(
+              h.empType === "Existing Employee" &&
+              sec.title === "New Account Setup"
+            ),
+        );
+        const dept = h.department || "";
+        const disciplineItems = DISCIPLINE_APPS[dept];
+        if (disciplineItems && disciplineItems.length) {
+          base.push({
+            title: `${dept} - Discipline Applications`,
+            items: disciplineItems,
+            discipline: dept,
+          });
+        }
+        return base;
+      }
+
+      // Returns [{sec, originalSi}] using stable section keys. Built-in
+      // sections keep their numeric index; the discipline section uses a
+      // string key so its checks survive across renders.
+      function effectiveSectionsWithKeys(h) {
+        const out = [];
+        SECTIONS.forEach((sec, si) => {
+          if (
+            h.empType === "Existing Employee" &&
+            sec.title === "New Account Setup"
+          ) {
+            return;
+          }
+          out.push({ sec, originalSi: si });
+        });
+        const dept = h.department || "";
+        const disciplineItems = DISCIPLINE_APPS[dept];
+        if (disciplineItems && disciplineItems.length) {
+          out.push({
+            sec: {
+              title: `${dept} - Discipline Applications`,
+              items: disciplineItems,
+            },
+            originalSi: `disc_${dept.replace(/[^A-Za-z0-9]+/g, "_")}`,
+          });
+        }
+        return out;
+      }
+
+      // ============================================================
+      // Storage & State
+      // ============================================================
+      const STORE_KEY = "h2m_deploy_v1";
+      let db = {};
+      let activeId = null;
+      let deleteTargetId = null;
+      let currentView = "checklist"; // 'checklist' | 'tracker'
+      let trackerFilter = { q: "", status: "", tech: "" };
+
+      // ============================================================
+      // Shared-File Sync (File System Access API)
+      // ------------------------------------------------------------
+      // Target shared location:
+      //   \\app-server\APPS\Device Deployment Checklist\
+      // Files used:
+      //   deployments.json         -- the shared database
+      //   deployments.lock         -- transient write lock (tech + ts)
+      //   backups\<date>.json      -- automatic daily snapshot
+      //
+      // Browser support: Chromium-based browsers only (Edge, Chrome).
+      // The HTML must be served over http(s)://, NOT opened from
+      // file://, otherwise persisted file handles cannot survive
+      // a reload.
+      // ============================================================
+      const SHARE_PATH_HINT =
+        "\\\\app-server\\APPS\\Device Deployment Checklist\\";
+      const SHARED_FILE_NAME = "deployments.json";
+      const LOCK_FILE_NAME = "deployments.lock";
+      const BACKUPS_DIR_NAME = "backups";
+      const POLL_INTERVAL_MS = 15000;
+      const LOCK_STALE_MS = 30000;
+
+      let dirHandle = null; // FileSystemDirectoryHandle for the share folder
+      let fileHandle = null; // FileSystemFileHandle for deployments.json
+      let lastFileMTime = 0; // last seen lastModified
+      let pendingPushIds = new Set(); // record ids changed since last push
+      let pushTimer = null;
+      let pollTimer = null;
+      let isPushing = false;
+      let lastBackupDate = ""; // YYYY-MM-DD
+      const CURRENT_USER =
+        (typeof window !== "undefined" && window.navigator && navigator.userAgent
+          ? ""
+          : "") || ""; // placeholder; real username captured below
+      const ACTOR =
+        localStorage.getItem("h2m_actor") ||
+        (() => {
+          // Best-effort identity. Persists per browser.
+          const guess =
+            (window.navigator && navigator.userAgent.match(/Windows/) && "tech") ||
+            "tech";
+          localStorage.setItem("h2m_actor", guess);
+          return guess;
+        })();
+
+      // ----- IndexedDB tiny KV (to persist file handles) -----
+      function idbOpen() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open("h2m_deploy_handles", 1);
+          req.onupgradeneeded = () => req.result.createObjectStore("kv");
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+      async function idbSet(key, value) {
+        const db = await idbOpen();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("kv", "readwrite");
+          tx.objectStore("kv").put(value, key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+      async function idbGet(key) {
+        const db = await idbOpen();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("kv", "readonly");
+          const req = tx.objectStore("kv").get(key);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+      async function idbDel(key) {
+        const db = await idbOpen();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("kv", "readwrite");
+          tx.objectStore("kv").delete(key);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      function setSyncStatus(state, text, meta) {
+        const dot = document.getElementById("sync-dot");
+        const txt = document.getElementById("sync-text");
+        const mta = document.getElementById("sync-meta");
+        if (!dot) return;
+        dot.classList.remove("live", "error", "syncing");
+        if (state) dot.classList.add(state);
+        if (text != null) txt.textContent = text;
+        if (meta != null) mta.textContent = meta;
+      }
+
+      function showShareControls(connected, readOnlyMode) {
+        const connectBtn = document.getElementById("connect-btn");
+        connectBtn.style.display = connected ? "none" : "block";
+        connectBtn.textContent = readOnlyMode
+          ? "Enable Editing"
+          : "Connect Share";
+        connectBtn.title = readOnlyMode
+          ? "Grant write access to deployments.json so your changes save"
+          : "Pick the shared folder containing deployments.json";
+        document.getElementById("refresh-btn").style.display = connected
+          ? "block"
+          : "none";
+        document.getElementById("disconnect-btn").style.display = connected
+          ? "block"
+          : "none";
+      }
+
+      function toast(message, type) {
+        const stack = document.getElementById("toast-stack");
+        if (!stack) return;
+        const el = document.createElement("div");
+        el.className = "toast" + (type ? " " + type : "");
+        el.textContent = message;
+        stack.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+      }
+
+      // ---------- handle restoration ----------
+      async function initShared() {
+        // Step 1: Try to restore a previously-granted writable handle so
+        // we get full read+write with zero clicks.
+        try {
+          const stored = await idbGet("dirHandle");
+          if (stored) {
+            const perm = await stored.queryPermission({ mode: "readwrite" });
+            if (perm === "granted") {
+              dirHandle = stored;
+              await openSharedFromDir();
+              await pullFromShared(true);
+              startPolling();
+              showShareControls(true);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn("initShared (handle restore):", e);
+        }
+
+        // Step 2: No writable handle yet. Try to AUTO-LOAD the shared
+        // JSON via fetch() so the tech instantly sees current data
+        // without any prompts. Save still requires Enable Editing.
+        const ok = await tryAutoFetchLoad();
+        if (ok) {
+          startFetchPolling();
+          setSyncStatus(
+            "live",
+            "Read-only",
+            `${SHARE_PATH_HINT}${SHARED_FILE_NAME} \u00b7 click Enable Editing to save`,
+          );
+          showShareControls(false, /*readOnlyMode*/ true);
+        } else {
+          setSyncStatus(null, "Local only", "Not connected to share");
+          showShareControls(false, false);
+        }
+      }
+
+      // Read-only auto-load. Works whenever the HTML is served from the
+      // same folder as deployments.json over http(s):// or even via UNC
+      // when the browser allows same-origin file:// fetches.
+      async function tryAutoFetchLoad() {
+        try {
+          const resp = await fetch(
+            `./${SHARED_FILE_NAME}?t=${Date.now()}`,
+            { cache: "no-store" },
+          );
+          if (!resp.ok) return false;
+          const text = await resp.text();
+          if (!text.trim()) return true; // empty file is fine
+          const remote = parseSharedPayload(text);
+          mergeRemoteIntoLocal(remote);
+          saveLocal();
+          // Track the timestamp so the fetch poller can detect changes.
+          const lm = resp.headers.get("Last-Modified");
+          lastFileMTime = lm ? Date.parse(lm) : Date.now();
+          renderSidebar();
+          renderMain();
+          return true;
+        } catch (e) {
+          console.warn("auto-fetch load failed:", e);
+          return false;
+        }
+      }
+
+      let fetchPollTimer = null;
+      function startFetchPolling() {
+        stopFetchPolling();
+        fetchPollTimer = setInterval(async () => {
+          if (fileHandle) return; // FSA polling takes over once connected
+          try {
+            const resp = await fetch(
+              `./${SHARED_FILE_NAME}?t=${Date.now()}`,
+              { cache: "no-store" },
+            );
+            if (!resp.ok) return;
+            const lm = resp.headers.get("Last-Modified");
+            const ts = lm ? Date.parse(lm) : 0;
+            if (!ts || ts === lastFileMTime) return;
+            lastFileMTime = ts;
+            const remote = parseSharedPayload(await resp.text());
+            mergeRemoteIntoLocal(remote);
+            saveLocal();
+            renderSidebar();
+            renderMain();
+          } catch (e) {
+            /* ignore transient errors */
+          }
+        }, POLL_INTERVAL_MS);
+      }
+      function stopFetchPolling() {
+        if (fetchPollTimer) {
+          clearInterval(fetchPollTimer);
+          fetchPollTimer = null;
+        }
+      }
+
+      async function connectSharedFile() {
+        if (!("showDirectoryPicker" in window)) {
+          alert(
+            "This browser does not support the File System Access API.\nPlease use Microsoft Edge or Google Chrome.",
+          );
+          return;
+        }
+        try {
+          const handle = await window.showDirectoryPicker({
+            mode: "readwrite",
+            startIn: "documents",
+            id: "h2m-deploy-share",
+          });
+          // Force a permission prompt right away
+          const perm = await handle.requestPermission({ mode: "readwrite" });
+          if (perm !== "granted") {
+            toast("Permission denied for that folder.", "error");
+            return;
+          }
+          dirHandle = handle;
+          await idbSet("dirHandle", handle);
+          stopFetchPolling();
+          await openSharedFromDir();
+          await pullFromShared(false);
+          startPolling();
+          showShareControls(true, false);
+          toast("Edit mode enabled. Your changes will sync to the share.", "success");
+        } catch (e) {
+          if (e && e.name === "AbortError") return; // user cancelled
+          console.error("connectSharedFile failed:", e);
+          const name = e && e.name ? e.name : "Error";
+          const msg = e && e.message ? e.message : String(e);
+          let hint = "";
+          if (
+            name === "SecurityError" ||
+            name === "NotAllowedError" ||
+            /secure context|user activation|cross-origin/i.test(msg)
+          ) {
+            hint =
+              "\n\nThis usually happens when the page is opened directly from a UNC path (file://). " +
+              "Browsers only allow folder write access from http(s):// origins. " +
+              "Ask IT to host this folder via IIS, or open it through a mapped drive letter.";
+          }
+          alert(
+            `Could not connect to the shared folder.\n\n${name}: ${msg}${hint}`,
+          );
+          setSyncStatus("error", "Connect failed", `${name}: ${msg}`);
+        }
+      }
+
+      async function disconnectShared() {
+        stopPolling();
+        stopFetchPolling();
+        await idbDel("dirHandle");
+        dirHandle = null;
+        fileHandle = null;
+        lastFileMTime = 0;
+        showShareControls(false, false);
+        setSyncStatus(null, "Local only", "Disconnected");
+        toast("Disconnected. Data still saved locally.", "warn");
+        // Try to fall back to read-only auto-load
+        const ok = await tryAutoFetchLoad();
+        if (ok) {
+          startFetchPolling();
+          setSyncStatus(
+            "live",
+            "Read-only",
+            `${SHARE_PATH_HINT}${SHARED_FILE_NAME} \u00b7 click Enable Editing to save`,
+          );
+          showShareControls(false, true);
+        }
+      }
+
+      async function openSharedFromDir() {
+        if (!dirHandle) throw new Error("No directory selected");
+        fileHandle = await dirHandle.getFileHandle(SHARED_FILE_NAME, {
+          create: true,
+        });
+        setSyncStatus("live", "Synced", `${SHARE_PATH_HINT}${SHARED_FILE_NAME}`);
+      }
+
+      // ---------- Pull (read remote, merge into local) ----------
+      async function pullFromShared(silent) {
+        if (!fileHandle) return;
+        try {
+          const file = await fileHandle.getFile();
+          if (file.size === 0) {
+            // First time: seed it with whatever we have locally
+            await pushToShared(true);
+            return;
+          }
+          if (file.lastModified === lastFileMTime) return; // no change
+          lastFileMTime = file.lastModified;
+          const text = await file.text();
+          const remote = parseSharedPayload(text);
+          mergeRemoteIntoLocal(remote);
+          saveLocal();
+          renderSidebar();
+          renderMain();
+          updateSyncMeta();
+          if (!silent) toast("Latest changes pulled from share.", "success");
+        } catch (e) {
+          console.warn("pullFromShared:", e);
+          setSyncStatus("error", "Read error", e.message || String(e));
+        }
+      }
+
+      function parseSharedPayload(text) {
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed && parsed.data && typeof parsed.data === "object") {
+            return parsed.data;
+          }
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (e) {
+          throw new Error("Shared file is not valid JSON");
+        }
+      }
+
+      function mergeRemoteIntoLocal(remote) {
+        let conflicts = 0;
+        // Remote-wins per record by updatedAt
+        for (const id of Object.keys(remote)) {
+          const r = remote[id];
+          const l = db[id];
+          if (!l) {
+            db[id] = r;
+            continue;
+          }
+          const rT = r.updatedAt || 0;
+          const lT = l.updatedAt || 0;
+          if (rT > lT) {
+            // Remote is newer; keep remote but warn if we had local edits
+            if (pendingPushIds.has(id)) conflicts++;
+            db[id] = r;
+            pendingPushIds.delete(id);
+          } else if (rT < lT) {
+            // Local newer -- leave local; will push on next save
+          } else {
+            // Equal timestamps; prefer the one with more checks done
+            // (cheap heuristic, avoids ping-pong)
+            db[id] = r;
+          }
+        }
+        // Anything remote doesn't have but local does = our pending insert.
+        // Leave it; pushToShared will add it.
+        if (conflicts > 0) {
+          toast(
+            `${conflicts} record(s) had concurrent edits — newest version kept.`,
+            "warn",
+          );
+        }
+      }
+
+      // ---------- Push (write local back, with lock) ----------
+      function schedulePush(id) {
+        if (id) pendingPushIds.add(id);
+        if (!fileHandle) return;
+        if (pushTimer) clearTimeout(pushTimer);
+        pushTimer = setTimeout(() => pushToShared(false), 600);
+      }
+
+      async function pushToShared(initial) {
+        if (!fileHandle || isPushing) return;
+        isPushing = true;
+        setSyncStatus("syncing", "Saving", "Writing to share...");
+        try {
+          const acquired = await acquireLock();
+          if (!acquired) {
+            setSyncStatus("error", "Locked", "Another tech is saving — retrying");
+            setTimeout(() => {
+              isPushing = false;
+              pushToShared(initial);
+            }, 1500);
+            return;
+          }
+          // Re-read remote first so we don't clobber concurrent edits
+          let remote = {};
+          try {
+            const file = await fileHandle.getFile();
+            if (file.size > 0) remote = parseSharedPayload(await file.text());
+          } catch (e) {
+            // file missing or unreadable; we'll just write our copy
+          }
+          // Merge remote into local (newer-wins) so we keep their changes
+          for (const id of Object.keys(remote)) {
+            const r = remote[id];
+            const l = db[id];
+            if (!l || (r.updatedAt || 0) > (l.updatedAt || 0)) db[id] = r;
+          }
+          const payload = {
+            schema: "h2m_deploy_v1",
+            updatedAt: new Date().toISOString(),
+            updatedBy: ACTOR,
+            data: db,
+          };
+          const writable = await fileHandle.createWritable();
+          await writable.write(JSON.stringify(payload, null, 2));
+          await writable.close();
+          const file = await fileHandle.getFile();
+          lastFileMTime = file.lastModified;
+          pendingPushIds.clear();
+          await maybeWriteDailyBackup();
+          updateSyncMeta();
+          setSyncStatus("live", "Synced", `${SHARE_PATH_HINT}${SHARED_FILE_NAME}`);
+        } catch (e) {
+          console.error("pushToShared:", e);
+          setSyncStatus("error", "Write error", e.message || String(e));
+          toast("Save to share failed: " + (e.message || e), "error");
+        } finally {
+          await releaseLock();
+          isPushing = false;
+        }
+      }
+
+      // ---------- Lock file ----------
+      async function acquireLock() {
+        if (!dirHandle) return true;
+        try {
+          // Check existing
+          let existingHandle = null;
+          try {
+            existingHandle = await dirHandle.getFileHandle(LOCK_FILE_NAME);
+          } catch (_) {
+            existingHandle = null;
+          }
+          if (existingHandle) {
+            const f = await existingHandle.getFile();
+            const age = Date.now() - f.lastModified;
+            if (age < LOCK_STALE_MS) {
+              try {
+                const txt = await f.text();
+                const lock = JSON.parse(txt);
+                if (lock.actor === ACTOR) return true; // own stale lock
+              } catch (_) {
+                /* ignore */
+              }
+              return false; // someone else holds a fresh lock
+            }
+            // Stale -- remove it
+            try {
+              await dirHandle.removeEntry(LOCK_FILE_NAME);
+            } catch (_) {}
+          }
+          const lockHandle = await dirHandle.getFileHandle(LOCK_FILE_NAME, {
+            create: true,
+          });
+          const w = await lockHandle.createWritable();
+          await w.write(
+            JSON.stringify({ actor: ACTOR, ts: Date.now() }),
+          );
+          await w.close();
+          return true;
+        } catch (e) {
+          console.warn("acquireLock:", e);
+          return true; // best-effort; don't block saves
+        }
+      }
+      async function releaseLock() {
+        if (!dirHandle) return;
+        try {
+          await dirHandle.removeEntry(LOCK_FILE_NAME);
+        } catch (_) {
+          /* lock already gone, fine */
+        }
+      }
+
+      // ---------- Daily backup ----------
+      async function maybeWriteDailyBackup() {
+        if (!dirHandle) return;
+        const today = new Date().toISOString().split("T")[0];
+        if (lastBackupDate === today) return;
+        try {
+          const backups = await dirHandle.getDirectoryHandle(BACKUPS_DIR_NAME, {
+            create: true,
+          });
+          const name = `deployments_${today}.json`;
+          const handle = await backups.getFileHandle(name, { create: true });
+          const w = await handle.createWritable();
+          await w.write(
+            JSON.stringify(
+              {
+                schema: "h2m_deploy_v1",
+                exportedAt: new Date().toISOString(),
+                exportedBy: ACTOR,
+                data: db,
+              },
+              null,
+              2,
+            ),
+          );
+          await w.close();
+          lastBackupDate = today;
+        } catch (e) {
+          console.warn("daily backup failed:", e);
+        }
+      }
+
+      // ---------- Polling for others' edits ----------
+      function startPolling() {
+        stopPolling();
+        pollTimer = setInterval(async () => {
+          if (!fileHandle || isPushing) return;
+          try {
+            const file = await fileHandle.getFile();
+            if (file.lastModified !== lastFileMTime) {
+              await pullFromShared(true);
+            }
+          } catch (e) {
+            console.warn("poll error:", e);
+            setSyncStatus("error", "Lost connection", e.message || String(e));
+          }
+        }, POLL_INTERVAL_MS);
+      }
+      function stopPolling() {
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      }
+      async function manualRefresh() {
+        if (!fileHandle) return;
+        lastFileMTime = 0; // force re-read
+        await pullFromShared(false);
+      }
+
+      function updateSyncMeta() {
+        const now = new Date();
+        const t = now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        document.getElementById("sync-meta").textContent =
+          `${SHARE_PATH_HINT}${SHARED_FILE_NAME} · last sync ${t}`;
+      }
+
+      // ============================================================
+      // Local persistence (always-on cache)
+      // ============================================================
+      function load() {
+        try {
+          db = JSON.parse(localStorage.getItem(STORE_KEY)) || {};
+        } catch (e) {
+          db = {};
+        }
+      }
+
+      function saveLocal() {
+        localStorage.setItem(STORE_KEY, JSON.stringify(db));
+      }
+
+      // Public save() -- called from every UI mutation. Stamps
+      // updatedAt on the active record and pushes to the shared file
+      // (debounced) when connected.
+      let nudgedReadOnly = false;
+      function save() {
+        if (activeId && db[activeId]) {
+          db[activeId].updatedAt = Date.now();
+          db[activeId].updatedBy = ACTOR;
+          schedulePush(activeId);
+        }
+        saveLocal();
+        // Nudge the tech once if they've started editing but the share
+        // is still in read-only auto-load mode.
+        if (!fileHandle && !nudgedReadOnly && fetchPollTimer) {
+          nudgedReadOnly = true;
+          toast(
+            "You're editing in read-only mode. Click Enable Editing in the sidebar to save your changes back to the share.",
+            "warn",
+          );
+        }
+      }
+
+      function getChecked(h) {
+        let count = 0;
+        effectiveSectionsWithKeys(h).forEach(({ sec, originalSi }) => {
+          sec.items.forEach((_, ii) => {
+            if (h.checks?.[`${originalSi}_${ii}`]) count++;
+          });
+        });
+        return count;
+      }
+
+      function getTotal(h) {
+        return effectiveSectionsWithKeys(h).reduce(
+          (a, { sec }) => a + sec.items.length,
+          0,
+        );
+      }
+
+      // ============================================================
+      // Render Functions
+      // ============================================================
+      function renderSidebar() {
+        const list = document.getElementById("hire-list");
+        const keys = Object.keys(db)
+          .filter((id) => !db[id].deleted)
+          .sort(
+          (a, b) => db[b].created - db[a].created,
+        );
+
+        if (keys.length === 0) {
+          list.innerHTML =
+            '<div class="empty-state">No deployments yet.<br>Click <strong>+ New Deployment</strong> to start.</div>';
+        } else {
+          list.innerHTML = keys
+            .map((id) => {
+              const h = db[id];
+              const done = getChecked(h);
+              const sidebarTotalItems = getTotal(h) || 1;
+              const pct = Math.round((done / sidebarTotalItems) * 100);
+              const active = id === activeId ? " active" : "";
+              const statusKey = statusClass(h.status);
+              const statusBadge = h.status
+                ? `<div class="meta-line"><span class="status-badge ${statusKey}" style="font-size:9px;padding:2px 6px">${esc(h.status)}</span></div>`
+                : "";
+              const metaLines = [
+                statusBadge,
+                h.email
+                  ? `<div class="meta-line">Email: ${esc(h.email)}</div>`
+                  : "",
+                h.department
+                  ? `<div class="meta-line">Dept: ${esc(h.department)}</div>`
+                  : "",
+                h.empType
+                  ? `<div class="meta-line">Type: ${esc(h.empType)}</div>`
+                  : "",
+                h.deviceType
+                  ? `<div class="meta-line">Device: ${esc(h.deviceType)}${h.deviceType === "Replacement" && h.oldPcName ? ` (was ${esc(h.oldPcName)})` : ""}</div>`
+                  : "",
+                h.pcName
+                  ? `<div class="meta-line">PC: ${esc(h.pcName)}</div>`
+                  : "",
+                h.office
+                  ? `<div class="meta-line">Office: ${esc(h.office)}</div>`
+                  : "",
+                h.start
+                  ? `<div class="meta-line">Start: ${esc(h.start)}</div>`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join("");
+              return `<div class="hire-item${active}" onclick="selectHire('${id}')">
+          <div class="hire-item-inner">
+            <div class="hire-name">${esc(h.name)}</div>
+            <div class="hire-meta">${metaLines}</div>
+            <div class="hire-progress-bar"><div class="hire-progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <button class="hire-del" title="Delete" onclick="event.stopPropagation();deleteHire('${id}')">✕</button>
+        </div>`;
+            })
+            .join("");
+        }
+      }
+
+      // Top-level dispatcher: always renders the view tabs, then either
+      // the checklist for the active hire or the tracker board.
+      function renderMain() {
+        const main = document.getElementById("main");
+        const liveIds = Object.keys(db).filter((id) => !db[id].deleted);
+        const total = liveIds.length;
+        const inProgressCount = liveIds
+          .map((id) => db[id])
+          .filter((h) => {
+          const t = getTotal(h) || 1;
+          const d = getChecked(h);
+          return !(d === t || h.forceComplete) && h.status !== "Deployed";
+        }).length;
+        const tabs = `
+      <div class="view-tabs">
+        <button class="view-tab${currentView === "checklist" ? " active" : ""}" onclick="setView('checklist')">
+          📋 Checklist
+        </button>
+        <button class="view-tab${currentView === "tracker" ? " active" : ""}" onclick="setView('tracker')">
+          📊 Tracker <span class="badge">${inProgressCount}/${total}</span>
+        </button>
+      </div>`;
+
+        if (currentView === "tracker") {
+          main.innerHTML = tabs + renderTrackerHtml();
+          attachTrackerListeners();
+          return;
+        }
+        main.innerHTML = tabs + renderChecklistHtml();
+      }
+
+      function setView(view) {
+        currentView = view;
+        renderMain();
+      }
+
+      // ---------- Checklist View ----------
+      function renderChecklistHtml() {
+        if (!activeId || !db[activeId] || db[activeId].deleted) {
+          return `<div class="no-hire"><div class="icon">💻</div><h2>No deployment selected</h2><p>Select a deployment from the sidebar, switch to the <strong>Tracker</strong> tab,<br/>or create a new one.</p></div>`;
+        }
+
+        const h = db[activeId];
+        const done = getChecked(h);
+        const visibleEntries = effectiveSectionsWithKeys(h);
+        const totalItems = visibleEntries.reduce(
+          (a, { sec }) => a + sec.items.length,
+          0,
+        ) || 1;
+        const pct = Math.round((done / totalItems) * 100);
+        const isComplete = done === totalItems || h.forceComplete;
+
+        const sectionPills = visibleEntries
+          .map(({ sec, originalSi }) => {
+            const secDone = sec.items.filter(
+              (_, ii) => h.checks?.[`${originalSi}_${ii}`],
+            ).length;
+            return `<span class="phase-pill${secDone === sec.items.length ? " done" : ""}">${esc(sec.title)}</span>`;
+          })
+          .join("");
+
+        const completeBanner = isComplete
+          ? `<div class="complete-banner">✓ Deployment complete -- laptop ready for ${esc(h.name)}</div>`
+          : "";
+
+        const sectionsHtml = visibleEntries
+          .map(({ sec, originalSi }, displayIndex) => {
+            const secDone = sec.items.filter(
+              (_, ii) => h.checks?.[`${originalSi}_${ii}`],
+            ).length;
+            const allDone = secDone === sec.items.length;
+            const isOpen = h.open?.[originalSi] !== false;
+            const safeKey = String(originalSi).replace(/'/g, "\\'");
+            const itemsHtml = sec.items
+              .map((item, ii) => {
+                const key = `${originalSi}_${ii}`;
+                const checked = !!h.checks?.[key];
+                return `<div class="check-item" onclick="toggleItem('${safeKey}','${ii}')">
+            <input type="checkbox" ${checked ? "checked" : ""} onclick="event.stopPropagation();toggleItem('${safeKey}','${ii}')">
+            <div class="check-text">
+              <div class="check-label${checked ? " done" : ""}">${esc(item.text)}</div>
+              ${item.note ? `<div class="check-note">${esc(item.note)}</div>` : ""}
+            </div>
+          </div>`;
+              })
+              .join("");
+            return `<div class="section${isOpen ? " open" : ""}" id="sec-${esc(String(originalSi))}">
+          <div class="section-header" onclick="toggleSection('${safeKey}')">
+            <span class="section-num">${String(displayIndex + 1).padStart(2, "0")}</span>
+            <span class="section-title">${esc(sec.title)}</span>
+            <span class="section-badge${allDone ? " done" : ""}">${secDone}/${sec.items.length}</span>
+            <span class="chevron">►</span>
+          </div>
+          <div class="section-body">${itemsHtml}</div>
+        </div>`;
+          })
+          .join("");
+
+        const subLine = [h.empType, h.department].filter(Boolean).join(" • ");
+        const metaLine = [
+          h.pcName,
+          h.office ? "Office: " + h.office : "",
+          h.start ? "Start: " + h.start : "",
+        ]
+          .filter(Boolean)
+          .join(" • ");
+        const r = 26,
+          cx = 30,
+          cy = 30,
+          circ = 2 * Math.PI * r;
+        const dash = (pct / 100) * circ;
+
+        const status = h.status || "Pending Setup";
+        const statusBadgeHtml = `<span class="status-badge ${statusClass(status)}">${esc(status)}</span>`;
+
+        // Replacement / reassignment tracker
+        let replaceCardHtml = "";
+        if (h.deviceType === "Replacement" || h.deviceType === "Redeployment") {
+          const dispOptions = [
+            "Pending",
+            "Returned to IT",
+            "Awaiting Wipe",
+            "Wiped",
+            "Awaiting Reassignment",
+            "Reassigned",
+            "Retired",
+          ]
+            .map(
+              (o) =>
+                `<option value="${esc(o)}"${(h.oldDisposition || "Pending") === o ? " selected" : ""}>${esc(o)}</option>`,
+            )
+            .join("");
+          const reasonOptions = [
+            "",
+            "End of Life",
+            "Hardware Failure",
+            "Performance Upgrade",
+            "Damage",
+            "Lost/Stolen",
+            "Role Change",
+            "Other",
+          ]
+            .map(
+              (o) =>
+                `<option value="${esc(o)}"${(h.replaceReason || "") === o ? " selected" : ""}>${esc(o || "Select Reason")}</option>`,
+            )
+            .join("");
+          replaceCardHtml = `<div class="replace-card">
+          <h3>⚠ Replacement / Reassignment Tracker</h3>
+          <div class="replace-grid">
+            <div>
+              <div class="rg-label">Old PC Name</div>
+              <input type="text" value="${esc(h.oldPcName || "")}" placeholder="OLD-PC-001" oninput="updateField('oldPcName', this.value)" />
+            </div>
+            <div>
+              <div class="rg-label">Replacement Reason</div>
+              <select onchange="updateField('replaceReason', this.value)">${reasonOptions}</select>
+            </div>
+            <div>
+              <div class="rg-label">Old Device Disposition</div>
+              <select onchange="updateField('oldDisposition', this.value)">${dispOptions}</select>
+            </div>
+            <div>
+              <div class="rg-label">Reassigned To</div>
+              <input type="text" value="${esc(h.reassignedTo || "")}" placeholder="Employee name" oninput="updateField('reassignedTo', this.value)" />
+            </div>
+            <div>
+              <div class="rg-label">Reassignment Date</div>
+              <input type="date" value="${esc(h.reassignedDate || "")}" oninput="updateField('reassignedDate', this.value)" />
+            </div>
+          </div>
+        </div>`;
+        }
+
+        const statusOptions = [
+          "Pending Setup",
+          "In Progress",
+          "Ready for Deployment",
+          "Deployed",
+          "On Hold",
+          "Returned",
+        ]
+          .map(
+            (o) =>
+              `<option value="${esc(o)}"${status === o ? " selected" : ""}>${esc(o)}</option>`,
+          )
+          .join("");
+
+        return `
+      <div class="hire-header">
+        <div class="hire-title-wrap">
+          <div class="hire-title">${esc(h.name)}</div>
+          ${h.email ? `<div class="hire-subtitle">${esc(h.email)}</div>` : ""}
+          ${subLine ? `<div class="hire-subtitle">${esc(subLine)}</div>` : ""}
+          ${metaLine ? `<div class="hire-subtitle" style="margin-top:3px;font-size:11px;font-weight:500">${metaLine}</div>` : ""}
+          <div class="meta-row">
+            ${statusBadgeHtml}
+            <select onchange="updateField('status', this.value); renderSidebar(); renderMain();" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-family:var(--mono);font-size:11px;">${statusOptions}</select>
+            ${h.deviceType ? `<span class="phase-pill">${esc(h.deviceType)}</span>` : ""}
+            <span class="phase-pill" title="Assigned technician">👤 <input type="text" value="${esc(h.technician || "")}" placeholder="Technician" oninput="updateField('technician', this.value)" onchange="renderSidebar();" style="background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:140px;" /></span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn export" onclick="exportPDF()">📄 Export PDF</button>
+          <button class="btn" onclick="checkAllBoxes()">✓ Check All</button>
+          <button class="btn" onclick="forceComplete()">⚡ ${h.forceComplete ? "Unforce Complete" : "Force Complete"}</button>
+          <button class="btn" onclick="resetHire()">Reset</button>
+          <button class="btn danger" onclick="deleteHire('${activeId}')">Delete</button>
+        </div>
+      </div>
+      ${completeBanner}
+      ${replaceCardHtml}
+      <div class="progress-card">
+        <div>
+          <svg class="ring" width="60" height="60" viewBox="0 0 60 60">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2C3D54" stroke-width="5"/>
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#00D9FF" stroke-width="5"
+              stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+              stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+          </svg>
+        </div>
+        <div class="progress-stats">
+          <div class="progress-fraction">${done}<span style="font-size:16px;color:var(--text-faint)"> / ${totalItems}</span></div>
+          <div class="progress-label">${pct}% complete</div>
+          <div class="phase-pills">${sectionPills}</div>
+        </div>
+      </div>
+      ${sectionsHtml}
+      <div class="notes-section">
+        <div class="notes-header">Deployment Notes <span>// log any issues here</span></div>
+        <textarea class="notes" placeholder="Serial number, issues encountered, special configurations..." oninput="saveNotes(this.value)">${esc(h.notes || "")}</textarea>
+      </div>`;
+      }
+
+      // ---------- Tracker View ----------
+      function renderTrackerHtml() {
+        const all = Object.keys(db)
+          .filter((id) => !db[id].deleted)
+          .map((id) => ({ id, h: db[id] }));
+        const total = all.length;
+        const counts = {
+          deployed: 0,
+          inprogress: 0,
+          pending: 0,
+          ready: 0,
+          hold: 0,
+          replacement: 0,
+        };
+        all.forEach(({ h }) => {
+          const t = getTotal(h) || 1;
+          const d = getChecked(h);
+          const complete = d === t || h.forceComplete;
+          if (h.status === "On Hold") counts.hold++;
+          if (h.status === "Ready for Deployment") counts.ready++;
+          if (h.status === "Pending Setup") counts.pending++;
+          if (h.status === "Deployed" || complete) counts.deployed++;
+          else counts.inprogress++;
+          if (h.deviceType === "Replacement" || h.deviceType === "Redeployment")
+            counts.replacement++;
+        });
+
+        // Build technician options for filter
+        const techs = Array.from(
+          new Set(all.map(({ h }) => (h.technician || "").trim()).filter(Boolean)),
+        ).sort();
+        const techOpts = techs
+          .map(
+            (t) =>
+              `<option value="${esc(t)}"${trackerFilter.tech === t ? " selected" : ""}>${esc(t)}</option>`,
+          )
+          .join("");
+        const statusOpts = [
+          "Pending Setup",
+          "In Progress",
+          "Ready for Deployment",
+          "Deployed",
+          "On Hold",
+          "Returned",
+        ]
+          .map(
+            (s) =>
+              `<option value="${esc(s)}"${trackerFilter.status === s ? " selected" : ""}>${esc(s)}</option>`,
+          )
+          .join("");
+
+        // Apply filters
+        const q = trackerFilter.q.trim().toLowerCase();
+        const filtered = all
+          .filter(({ h }) => {
+            if (trackerFilter.status && h.status !== trackerFilter.status)
+              return false;
+            if (
+              trackerFilter.tech &&
+              (h.technician || "").trim() !== trackerFilter.tech
+            )
+              return false;
+            if (q) {
+              const blob = [
+                h.name,
+                h.email,
+                h.pcName,
+                h.oldPcName,
+                h.department,
+                h.office,
+                h.technician,
+                h.deviceType,
+                h.status,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+              if (!blob.includes(q)) return false;
+            }
+            return true;
+          })
+          .sort((a, b) => (b.h.created || 0) - (a.h.created || 0));
+
+        const stats = `
+      <div class="tracker-stats">
+        <div class="tracker-stat"><div class="num">${total}</div><div class="lbl">Total</div></div>
+        <div class="tracker-stat"><div class="num">${counts.inprogress}</div><div class="lbl">Active</div></div>
+        <div class="tracker-stat"><div class="num">${counts.ready}</div><div class="lbl">Ready</div></div>
+        <div class="tracker-stat"><div class="num">${counts.deployed}</div><div class="lbl">Deployed</div></div>
+        <div class="tracker-stat"><div class="num">${counts.hold}</div><div class="lbl">On Hold</div></div>
+        <div class="tracker-stat"><div class="num">${counts.replacement}</div><div class="lbl">Replacements</div></div>
+      </div>`;
+
+        const toolbar = `
+      <div class="tracker-toolbar">
+        <input type="text" id="tr-search" placeholder="Search PC, employee, email..." value="${esc(trackerFilter.q)}" />
+        <select id="tr-status">
+          <option value="">All Statuses</option>
+          ${statusOpts}
+        </select>
+        <select id="tr-tech">
+          <option value="">All Technicians</option>
+          ${techOpts}
+        </select>
+        <button class="btn" onclick="clearTrackerFilters()">Clear</button>
+      </div>`;
+
+        let body;
+        if (filtered.length === 0) {
+          body = `<tr><td colspan="8" class="empty">${total === 0 ? "No deployments yet. Click <strong>+ New Deployment</strong> to begin." : "No deployments match your filters."}</td></tr>`;
+        } else {
+          body = filtered
+            .map(({ id, h }) => {
+              const t = getTotal(h) || 1;
+              const d = getChecked(h);
+              const pct = Math.round((d / t) * 100);
+              const status = h.status || "Pending Setup";
+              const isActive = id === activeId ? " active-row" : "";
+              const techDisplay = h.technician
+                ? `<span class="tech-cell">${esc(h.technician)}</span>`
+                : `<span style="color:var(--text-faint);font-style:italic">Unassigned</span>`;
+              const pcDisplay = h.pcName
+                ? esc(h.pcName)
+                : `<span style="color:var(--text-faint)">—</span>`;
+              const oldInfo =
+                (h.deviceType === "Replacement" ||
+                  h.deviceType === "Redeployment") &&
+                h.oldPcName
+                  ? `<div style="font-size:10px;color:var(--text-faint);font-family:var(--mono);margin-top:2px">was ${esc(h.oldPcName)} · ${esc(h.oldDisposition || "Pending")}</div>`
+                  : "";
+              return `<tr class="${isActive.trim()}" onclick="openFromTracker('${id}')">
+            <td class="pc-cell">${pcDisplay}${oldInfo}</td>
+            <td>${esc(h.name)}<div style="font-size:10px;color:var(--text-faint)">${esc(h.email || "")}</div></td>
+            <td>${techDisplay}</td>
+            <td><span class="status-badge ${statusClass(status)}">${esc(status)}</span></td>
+            <td>${esc(h.deviceType || "—")}</td>
+            <td>${esc(h.department || "—")}</td>
+            <td>${esc(h.office || "—")}</td>
+            <td>
+              <div class="mini-progress"><span style="width:${pct}%"></span></div>
+              <div class="mini-progress-text">${d}/${t} · ${pct}%</div>
+            </td>
+          </tr>`;
+            })
+            .join("");
+        }
+
+        return `
+      ${stats}
+      ${toolbar}
+      <div class="tracker-table-wrap">
+        <table class="tracker-table">
+          <thead>
+            <tr>
+              <th>PC Name</th>
+              <th>Employee</th>
+              <th>Technician</th>
+              <th>Status</th>
+              <th>Device</th>
+              <th>Department</th>
+              <th>Office</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>
+      </div>`;
+      }
+
+      function attachTrackerListeners() {
+        const s = document.getElementById("tr-search");
+        const st = document.getElementById("tr-status");
+        const tt = document.getElementById("tr-tech");
+        if (s) {
+          s.addEventListener("input", (e) => {
+            trackerFilter.q = e.target.value;
+            // Re-render only the table rows for snappier typing
+            renderMain();
+            const again = document.getElementById("tr-search");
+            if (again) {
+              again.focus();
+              const v = again.value;
+              again.setSelectionRange(v.length, v.length);
+            }
+          });
+        }
+        if (st)
+          st.addEventListener("change", (e) => {
+            trackerFilter.status = e.target.value;
+            renderMain();
+          });
+        if (tt)
+          tt.addEventListener("change", (e) => {
+            trackerFilter.tech = e.target.value;
+            renderMain();
+          });
+      }
+
+      function clearTrackerFilters() {
+        trackerFilter = { q: "", status: "", tech: "" };
+        renderMain();
+      }
+
+      function openFromTracker(id) {
+        activeId = id;
+        currentView = "checklist";
+        renderSidebar();
+        renderMain();
+      }
+
+      function selectHire(id) {
+        activeId = id;
+        renderSidebar();
+        renderMain();
+      }
+
+      function toggleItem(si, ii) {
+        if (!activeId) return;
+        const key = `${si}_${ii}`;
+        const h = db[activeId];
+        if (!h.checks) h.checks = {};
+        h.checks[key] = !h.checks[key];
+        save();
+        renderSidebar();
+        renderMain();
+      }
+
+      function toggleSection(si) {
+        if (!activeId) return;
+        const h = db[activeId];
+        if (!h.open) h.open = {};
+        h.open[si] = h.open[si] === false ? true : false;
+        save();
+        const sec = document.getElementById("sec-" + si);
+        if (sec) sec.classList.toggle("open");
+      }
+
+      function saveNotes(val) {
+        if (!activeId) return;
+        db[activeId].notes = val;
+        save();
+      }
+
+      function resetHire() {
+        if (!activeId) return;
+        document.getElementById("reset-modal").classList.add("open");
+      }
+
+      function closeResetModal() {
+        document.getElementById("reset-modal").classList.remove("open");
+      }
+
+      function confirmReset() {
+        db[activeId].checks = {};
+        db[activeId].forceComplete = false;
+        save();
+        renderSidebar();
+        renderMain();
+        closeResetModal();
+      }
+
+      function checkAllBoxes() {
+        if (!activeId) return;
+        const h = db[activeId];
+        if (!h.checks) h.checks = {};
+        effectiveSectionsWithKeys(h).forEach(({ sec, originalSi }) => {
+          sec.items.forEach((_, ii) => {
+            h.checks[`${originalSi}_${ii}`] = true;
+          });
+        });
+        h.forceComplete = false;
+        save();
+        renderSidebar();
+        renderMain();
+      }
+
+      function forceComplete() {
+        if (!activeId) return;
+        const h = db[activeId];
+        h.forceComplete = !h.forceComplete;
+        save();
+        renderSidebar();
+        renderMain();
+      }
+
+      function deleteHire(id) {
+        if (!db[id]) return;
+        deleteTargetId = id;
+        document.getElementById("delete-modal-message").textContent =
+          `Delete checklist for ${db[id].name}? This cannot be undone.`;
+        document.getElementById("delete-modal").classList.add("open");
+      }
+
+      function closeDeleteModal() {
+        document.getElementById("delete-modal").classList.remove("open");
+        deleteTargetId = null;
+      }
+
+      function confirmDelete() {
+        if (!deleteTargetId) return;
+        // Tombstone (kept so a deletion is propagated through the
+        // shared file rather than being silently re-added by a remote
+        // copy that still has the record).
+        db[deleteTargetId] = {
+          deleted: true,
+          updatedAt: Date.now(),
+          updatedBy: ACTOR,
+          name: db[deleteTargetId]?.name || "",
+        };
+        if (activeId === deleteTargetId) activeId = null;
+        // Stamp + push this id directly (save() only stamps activeId).
+        schedulePush(deleteTargetId);
+        saveLocal();
+        renderSidebar();
+        renderMain();
+        closeDeleteModal();
+      }
+
+      // ============================================================
+      // Export Functions (jsPDF - Text-Based - Professional)
+      // ============================================================
+      async function exportPDF() {
+        if (!activeId) return;
+        const h = db[activeId];
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+        });
+
+        // Load and add logo
+        try {
+          const logoUrl =
+            "https://www.h2m.com/wp-content/uploads/2023/01/H2M-90-Years-white.png";
+          const response = await fetch(logoUrl);
+          const blob = await response.blob();
+          const logoData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          doc.addImage(logoData, "PNG", 12, 8, 35, 12); // x, y, width, height
+        } catch (e) {
+          console.warn("Could not load logo:", e);
+        }
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPos = 28;
+        const margin = 12;
+        const lineHeight = 5;
+        let pageNum = 1;
+
+        // Helper to add text with auto page break
+        function addText(text, fontSize = 11, bold = false, indent = 0) {
+          doc.setFontSize(fontSize);
+          doc.setFont(undefined, bold ? "bold" : "normal");
+          const x = margin + indent;
+          const maxWidth = pageWidth - 2 * margin - indent;
+          const lines = doc.splitTextToSize(text, maxWidth);
+
+          lines.forEach((line) => {
+            if (yPos + lineHeight > pageHeight - 15) {
+              addPageNumber();
+              doc.addPage();
+              yPos = 15;
+              pageNum++;
+            }
+            doc.text(line, x, yPos);
+            yPos += lineHeight;
+          });
+        }
+
+        function addLine() {
+          doc.setDrawColor(150, 150, 150);
+          doc.line(margin, yPos, pageWidth - margin, yPos);
+          yPos += 3;
+        }
+
+        function addPageNumber() {
+          doc.setFontSize(9);
+          doc.setFont(undefined, "normal");
+          doc.setTextColor(180, 180, 180);
+          doc.text(`Page ${pageNum}`, pageWidth - margin - 10, pageHeight - 8);
+          doc.setTextColor(0, 0, 0);
+        }
+
+        // Title with styling
+        doc.setFontSize(16);
+        doc.setFont(undefined, "bold");
+        doc.text("LAPTOP DEPLOYMENT CHECKLIST", margin, yPos);
+        yPos += 8;
+        addLine();
+        yPos += 2;
+
+        // Employee Info Section
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("EMPLOYEE INFORMATION", margin, yPos);
+        yPos += 6;
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        const done = getChecked(h);
+
+        // Calculate total items based on employee type
+        const pdfEntries = effectiveSectionsWithKeys(h);
+        const pdfTotalItems = pdfEntries.reduce(
+          (a, { sec }) => a + sec.items.length,
+          0,
+        ) || 1;
+        const progress = Math.round((done / pdfTotalItems) * 100);
+
+        const infoItems = [
+          [`Employee Name:`, h.name || "N/A"],
+          [`Email:`, h.email || "N/A"],
+          [`PC Name:`, h.pcName || "N/A"],
+          [`Department:`, h.department || "N/A"],
+          [`Type:`, h.empType || "N/A"],
+          [`Device Type:`, h.deviceType || "N/A"],
+          [`Status:`, h.status || "Pending Setup"],
+          [`Office:`, h.office || "N/A"],
+          [`Start Date:`, h.start || "N/A"],
+          [`Progress:`, `${done}/${pdfTotalItems} (${progress}%)`],
+        ];
+
+        if (h.deviceType === "Replacement" || h.deviceType === "Redeployment") {
+          infoItems.push(["Old PC Name:", h.oldPcName || "N/A"]);
+          infoItems.push(["Replacement Reason:", h.replaceReason || "N/A"]);
+          infoItems.push(["Old Disposition:", h.oldDisposition || "Pending"]);
+          infoItems.push(["Reassigned To:", h.reassignedTo || "N/A"]);
+          if (h.reassignedDate)
+            infoItems.push(["Reassignment Date:", h.reassignedDate]);
+        }
+
+        infoItems.forEach(([label, value]) => {
+          doc.setFont(undefined, "bold");
+          doc.text(label, margin + 2, yPos);
+          doc.setFont(undefined, "normal");
+          doc.text(value, margin + 60, yPos);
+          yPos += 5;
+        });
+
+        yPos += 3;
+        addLine();
+        yPos += 2;
+
+        // Checklist Sections
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("DEPLOYMENT CHECKLIST", margin, yPos);
+        yPos += 6;
+
+        // Filter sections for Existing Employees + add discipline apps
+        const pdfSections = effectiveSectionsWithKeys(h);
+
+        pdfSections.forEach(({ sec, originalSi }, displayIndex) => {
+          // Force a page break before the second half on long checklists
+          if (displayIndex === 5 && pageNum === 1) {
+            addPageNumber();
+            doc.addPage();
+            yPos = 15;
+            pageNum++;
+          }
+
+          // Section header
+          doc.setFontSize(11);
+          doc.setFont(undefined, "bold");
+          doc.setFillColor(230, 230, 230);
+          doc.rect(margin, yPos - 3.5, pageWidth - 2 * margin, 5.5, "F");
+          doc.text(`${displayIndex + 1}. ${sec.title}`, margin + 2, yPos);
+          yPos += 7;
+
+          // Section items
+          doc.setFontSize(9.5);
+          doc.setFont(undefined, "normal");
+          sec.items.forEach((item, ii) => {
+            // Check if we need a new page before adding item
+            if (yPos + 10 > pageHeight - 15) {
+              addPageNumber();
+              doc.addPage();
+              yPos = 15;
+              pageNum++;
+            }
+
+            const key = `${originalSi}_${ii}`;
+            const isChecked = !!h.checks?.[key];
+            const prefix = isChecked ? "[X]" : "[ ]";
+
+            // Add checkbox prefix
+            doc.setFont(undefined, isChecked ? "bold" : "normal");
+            doc.text(prefix, margin + 2, yPos);
+
+            // Add item text
+            const maxWidth = pageWidth - 2 * margin - 12;
+            const lines = doc.splitTextToSize(item.text, maxWidth);
+            lines.forEach((line, idx) => {
+              // Check again if we need another page for wrapped lines
+              if (yPos + 4 > pageHeight - 15) {
+                addPageNumber();
+                doc.addPage();
+                yPos = 15;
+                pageNum++;
+              }
+              doc.text(line, margin + 10, yPos);
+              yPos += 4;
+            });
+
+            // Add note if exists
+            if (item.note) {
+              doc.setFontSize(8.5);
+              doc.setFont(undefined, "italic");
+              const noteLines = doc.splitTextToSize(
+                `* ${item.note}`,
+                maxWidth - 5,
+              );
+              noteLines.forEach((line) => {
+                // Check if we need another page for note lines
+                if (yPos + 3.5 > pageHeight - 15) {
+                  addPageNumber();
+                  doc.addPage();
+                  yPos = 15;
+                  pageNum++;
+                }
+                doc.text(line, margin + 13, yPos);
+                yPos += 3.5;
+              });
+              doc.setFontSize(9.5);
+            }
+          });
+
+          yPos += 2;
+        });
+
+        // Notes Section
+        if (h.notes) {
+          yPos += 2;
+          addLine();
+          yPos += 2;
+
+          doc.setFontSize(12);
+          doc.setFont(undefined, "bold");
+          doc.text("DEPLOYMENT NOTES", margin, yPos);
+          yPos += 5;
+
+          doc.setFontSize(9.5);
+          doc.setFont(undefined, "normal");
+          const noteLines = doc.splitTextToSize(
+            h.notes,
+            pageWidth - 2 * margin,
+          );
+          noteLines.forEach((line) => {
+            if (yPos + 4 > pageHeight - 15) {
+              addPageNumber();
+              doc.addPage();
+              yPos = 15;
+              pageNum++;
+            }
+            doc.text(line, margin, yPos);
+            yPos += 4;
+          });
+        }
+
+        // Footer
+        addPageNumber();
+
+        // Save
+        const filename = `Setup & Install Checklist - ${h.name.replace(/\s+/g, "-")}_${new Date().toISOString().split("T")[0]}.pdf`;
+        doc.save(filename);
+      }
+
+      // ============================================================
+      // Modal Functions
+      // ============================================================
+      function openNewHireModal() {
+        [
+          "m-name",
+          "m-email",
+          "m-dept",
+          "m-office",
+          "m-pc-name",
+          "m-emp-type",
+          "m-start",
+          "m-device-type",
+          "m-status",
+          "m-tech",
+          "m-old-pc",
+          "m-replace-reason",
+          "m-old-disposition",
+          "m-reassigned-to",
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (el.tagName === "INPUT") el.value = "";
+          else el.selectedIndex = 0;
+        });
+        // Default technician to signed-in Entra user when available
+        const techField = document.getElementById("m-tech");
+        if (techField && msalAccount) {
+          techField.value = msalAccount.name || msalAccount.username || "";
+        }
+        // Show start date field by default; hide replacement fields by default
+        document.getElementById("start-date-field").style.display = "flex";
+        document.getElementById("replacement-fields").style.display = "none";
+        document.getElementById("modal").classList.add("open");
+        setTimeout(() => document.getElementById("m-name").focus(), 80);
+      }
+
+      function handleNewHireClick() {
+        openNewHireModal();
+      }
+
+      function closeModal() {
+        document.getElementById("modal").classList.remove("open");
+      }
+
+      function createHire() {
+        const name = document.getElementById("m-name").value.trim();
+        if (!name) {
+          alert("Please enter an employee name.");
+          return;
+        }
+
+        const id = "h" + Date.now() + Math.random().toString(36).slice(2, 6);
+        const deviceType = document
+          .getElementById("m-device-type")
+          .value.trim();
+        db[id] = {
+          name,
+          email: document.getElementById("m-email").value.trim(),
+          department: document.getElementById("m-dept").value.trim(),
+          office: document.getElementById("m-office").value.trim(),
+          pcName: document.getElementById("m-pc-name").value.trim(),
+          empType: document.getElementById("m-emp-type").value.trim(),
+          start: document.getElementById("m-start").value,
+          deviceType,
+          status:
+            document.getElementById("m-status").value || "Pending Setup",
+          technician:
+            document.getElementById("m-tech")?.value.trim() ||
+            (msalAccount && (msalAccount.name || msalAccount.username)) ||
+            "",
+          oldPcName:
+            document.getElementById("m-old-pc")?.value.trim() || "",
+          replaceReason:
+            document.getElementById("m-replace-reason")?.value || "",
+          oldDisposition:
+            document.getElementById("m-old-disposition")?.value ||
+            (deviceType === "Replacement" || deviceType === "Redeployment"
+              ? "Pending"
+              : ""),
+          reassignedTo:
+            document.getElementById("m-reassigned-to")?.value.trim() || "",
+          reassignedDate: "",
+          checks: {},
+          open: {},
+          notes: "",
+          created: Date.now(),
+          updatedAt: Date.now(),
+          updatedBy: ACTOR,
+        };
+        activeId = id;
+        save();
+        closeModal();
+        renderSidebar();
+        renderMain();
+      }
+
+      document.getElementById("modal").addEventListener("click", function (e) {
+        if (e.target === this) closeModal();
+      });
+
+      // Toggle start date field based on employee type
+      document
+        .getElementById("m-emp-type")
+        .addEventListener("change", function () {
+          const startDateField = document.getElementById("start-date-field");
+          if (this.value === "Existing Employee") {
+            startDateField.style.display = "none";
+          } else {
+            startDateField.style.display = "flex";
+          }
+        });
+
+      // Toggle replacement fields based on device type
+      document
+        .getElementById("m-device-type")
+        .addEventListener("change", function () {
+          const replaceFields = document.getElementById("replacement-fields");
+          if (this.value === "Replacement" || this.value === "Redeployment") {
+            replaceFields.style.display = "block";
+          } else {
+            replaceFields.style.display = "none";
+          }
+        });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeModal();
+        if (
+          e.key === "Enter" &&
+          document.getElementById("modal").classList.contains("open")
+        ) {
+          createHire();
+        }
+      });
+
+      function esc(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      // Update an arbitrary field on the active hire and persist.
+      function updateField(field, value) {
+        if (!activeId || !db[activeId]) return;
+        db[activeId][field] = value;
+        save();
+      }
+
+      function statusClass(status) {
+        switch (status) {
+          case "In Progress":
+            return "status-progress";
+          case "Ready for Deployment":
+            return "status-ready";
+          case "Deployed":
+            return "status-deployed";
+          case "On Hold":
+            return "status-hold";
+          case "Returned":
+            return "status-returned";
+          default:
+            return "status-pending";
+        }
+      }
+
+      // Export the entire database to a JSON file the user can save as
+      // a backup. Mitigates accidental data loss when localStorage is
+      // cleared (browser cache wipe, device change, etc.).
+      function exportBackup() {
+        const payload = {
+          schema: "h2m_deploy_v1",
+          exportedAt: new Date().toISOString(),
+          data: db,
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `h2m-deployments-backup_${new Date().toISOString().split("T")[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function importBackup(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const parsed = JSON.parse(e.target.result);
+            const incoming =
+              parsed && parsed.data && typeof parsed.data === "object"
+                ? parsed.data
+                : parsed;
+            if (!incoming || typeof incoming !== "object") {
+              alert("Invalid backup file.");
+              return;
+            }
+            const incomingCount = Object.keys(incoming).length;
+            const existingCount = Object.keys(db).length;
+            const choice = prompt(
+              `Backup contains ${incomingCount} deployment(s).\n\nType:\n  MERGE  - keep existing and add new\n  REPLACE - overwrite all current data (${existingCount} record(s))\n  CANCEL - abort`,
+              "MERGE",
+            );
+            if (!choice) return;
+            const mode = choice.trim().toUpperCase();
+            if (mode === "REPLACE") {
+              db = incoming;
+            } else if (mode === "MERGE") {
+              db = { ...db, ...incoming };
+            } else {
+              return;
+            }
+            save();
+            activeId = null;
+            renderSidebar();
+            renderMain();
+            alert("Backup restored.");
+          } catch (err) {
+            console.error(err);
+            alert("Could not parse backup file: " + err.message);
+          } finally {
+            event.target.value = "";
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // Init
+      load();
+      const firstId = Object.keys(db)
+        .filter((id) => !db[id].deleted)
+        .sort(
+        (a, b) => (db[b].created || 0) - (db[a].created || 0),
+      )[0];
+      if (firstId) {
+        activeId = firstId;
+      }
+      renderSidebar();
+      renderMain();
+      // Try to auto-restore the shared file connection from a previous
+      // session. If it succeeds, we silently pull the latest data.
+      initShared();
+    </script>
+  </body>
+</html>
