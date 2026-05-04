@@ -822,10 +822,6 @@
         flex: 1;
         overflow-y: auto;
         padding: 32px 40px;
-        max-width: 900px;
-      }
-      /* Tracker view needs the full width to fit all columns. */
-      body.view-tracker .main {
         max-width: none;
       }
 
@@ -1425,8 +1421,8 @@
       /* Replacement / reassignment card */
       .replace-card {
         background: var(--surface-alt);
-        border: 1px solid var(--border);
-        border-left: 4px solid var(--accent);
+        border: 1px solid var(--warning);
+        border-left: 4px solid var(--warning);
         border-radius: var(--radius-lg);
         padding: 14px 16px;
         margin-bottom: 16px;
@@ -1434,7 +1430,7 @@
       .replace-card h3 {
         font-size: 12px;
         font-weight: 700;
-        color: var(--accent);
+        color: var(--warning);
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-family: var(--mono);
@@ -4061,7 +4057,7 @@
             )
             .join("");
           replaceCardHtml = `<div class="replace-card">
-          <h3>Replacement / Reassignment Tracker</h3>
+          <h3>⚠ Replacement / Reassignment Tracker</h3>
           <div class="replace-grid">
             <div>
               <div class="rg-label">Old PC Name</div>
@@ -4177,13 +4173,10 @@
           replacement: 0,
         };
         all.forEach(({ h }) => {
-          const t = getTotal(h) || 1;
-          const d = getChecked(h);
-          const complete = d === t || h.forceComplete;
           if (h.status === "On Hold") counts.hold++;
           if (h.status === "Ready for Deployment") counts.ready++;
           if (h.status === "Pending Setup") counts.pending++;
-          if (h.status === "Deployed" || complete) counts.deployed++;
+          if (h.status === "Deployed") counts.deployed++;
           else counts.inprogress++;
           if (h.deviceType === "Replacement" || h.deviceType === "Redeployment")
             counts.replacement++;
@@ -4220,19 +4213,12 @@
         const quickMatch = ({ h }) => {
           switch (trackerFilter.quick) {
             case "active": {
-              const t = getTotal(h) || 1;
-              const d = getChecked(h);
-              const complete = d === t || h.forceComplete;
-              return !(h.status === "Deployed" || complete);
+              return h.status !== "Deployed";
             }
             case "ready":
               return h.status === "Ready for Deployment";
-            case "deployed": {
-              const t = getTotal(h) || 1;
-              const d = getChecked(h);
-              const complete = d === t || h.forceComplete;
-              return h.status === "Deployed" || complete;
-            }
+            case "deployed":
+              return h.status === "Deployed";
             case "hold":
               return h.status === "On Hold";
             case "replacement":
