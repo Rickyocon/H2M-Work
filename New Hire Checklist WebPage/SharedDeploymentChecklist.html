@@ -92,6 +92,51 @@
         top: 0;
         overflow: hidden;
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+        transition:
+          width 0.2s ease,
+          min-width 0.2s ease;
+      }
+      .sidebar.collapsed {
+        width: 0;
+        min-width: 0;
+        border-right: none;
+        box-shadow: none;
+      }
+      .sidebar.collapsed > *:not(.sidebar-toggle) {
+        display: none;
+      }
+
+      /* Floating toggle button (always visible) */
+      .sidebar-toggle {
+        position: fixed;
+        top: 12px;
+        left: 300px;
+        transform: translateX(-50%);
+        z-index: 1000;
+        width: 24px;
+        height: 36px;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: 0 6px 6px 0;
+        color: var(--text-faint);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition:
+          left 0.2s ease,
+          color 0.15s,
+          background 0.15s;
+      }
+      .sidebar-toggle:hover {
+        color: var(--accent);
+        background: var(--surface);
+      }
+      .sidebar.collapsed ~ .sidebar-toggle {
+        left: 0;
+        transform: translateX(0);
+        border-radius: 0 6px 6px 0;
       }
 
       .sidebar-header {
@@ -154,6 +199,343 @@
         flex: 1;
         overflow-y: auto;
         padding: 8px 10px;
+      }
+
+      /* ===== Sidebar filter bar (search + group toggles) ===== */
+      .sb-filters {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 10px 4px;
+        border-bottom: 1px solid var(--border);
+      }
+      .sb-search {
+        width: 100%;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 6px 10px;
+        font-size: 12px;
+        font-family: var(--mono);
+        outline: none;
+      }
+      .sb-search:focus {
+        border-color: var(--accent);
+      }
+      .sb-group-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        color: var(--text-faint);
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .sb-chip {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text-faint);
+        border-radius: 999px;
+        padding: 2px 8px;
+        cursor: pointer;
+        font-size: 10px;
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.15s;
+      }
+      .sb-chip:hover {
+        border-color: var(--accent);
+      }
+      .sb-chip.on {
+        background: var(--accent);
+        color: #1a1d1f;
+        border-color: var(--accent);
+      }
+      .who-am-i {
+        padding: 4px 12px 6px;
+        font-size: 10px;
+        color: var(--text-faint);
+        font-family: var(--mono);
+        border-bottom: 1px solid var(--border);
+      }
+      .who-am-i a {
+        color: var(--accent);
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      /* ===== Group headers ===== */
+      .grp {
+        margin-bottom: 6px;
+      }
+      .grp-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        font-size: 10px;
+        color: var(--text-faint);
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+        border-radius: var(--radius);
+        user-select: none;
+      }
+      .grp-header:hover {
+        background: var(--surface-alt);
+        color: var(--text);
+      }
+      .grp-header.tech-header {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .grp-caret {
+        display: inline-block;
+        width: 10px;
+        transition: transform 0.15s;
+      }
+      .grp.collapsed .grp-caret {
+        transform: rotate(-90deg);
+      }
+      .grp-count {
+        margin-left: auto;
+        background: var(--surface-alt);
+        color: var(--text-faint);
+        border-radius: 999px;
+        padding: 1px 7px;
+        font-size: 9px;
+      }
+      .grp.collapsed .grp-body {
+        display: none;
+      }
+      .grp-body.tech-body {
+        padding-left: 6px;
+      }
+
+      /* ===== Compact row ===== */
+      .hire-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 8px;
+        margin: 1px 0;
+        border-radius: var(--radius);
+        cursor: pointer;
+        position: relative;
+        min-width: 0;
+        font-size: 12px;
+        transition: background 0.12s;
+      }
+      .hire-row:hover {
+        background: var(--surface-alt);
+      }
+      .hire-row.active {
+        background: var(--info-bg);
+        border-left: 3px solid var(--accent);
+        padding-left: 5px;
+      }
+      .hire-row.active .hire-row-name {
+        color: var(--accent);
+      }
+      .hire-row-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: var(--text-faint);
+      }
+      .hire-row-dot.status-pending {
+        background: #888;
+      }
+      .hire-row-dot.status-progress {
+        background: #4a9eff;
+      }
+      .hire-row-dot.status-ready {
+        background: var(--accent);
+      }
+      .hire-row-dot.status-deployed {
+        background: var(--accent-dark);
+      }
+      .hire-row-dot.status-hold {
+        background: #e0a82e;
+      }
+      .hire-row-dot.status-returned {
+        background: #8a8a8a;
+      }
+      .hire-row-name {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text);
+        font-weight: 500;
+      }
+      .hire-row-tag {
+        flex-shrink: 0;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-faint);
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .hire-row-status {
+        flex-shrink: 0;
+        font-family: var(--mono);
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: var(--surface-alt);
+        color: var(--text-faint);
+        white-space: nowrap;
+      }
+      .hire-row-status.status-progress {
+        color: #4a9eff;
+        background: rgba(74, 158, 255, 0.12);
+      }
+      .hire-row-status.status-ready {
+        color: var(--accent);
+        background: rgba(153, 174, 72, 0.15);
+      }
+      .hire-row-status.status-deployed {
+        color: var(--accent-dark);
+        background: rgba(127, 145, 58, 0.18);
+      }
+      .hire-row-status.status-hold {
+        color: #e0a82e;
+        background: rgba(224, 168, 46, 0.15);
+      }
+      .hire-row-status.status-returned {
+        color: #aaa;
+        background: rgba(170, 170, 170, 0.12);
+      }
+
+      /* Sidebar filter bar (Sort + Tech) */
+      .sb-filter-bar {
+        display: flex;
+        gap: 6px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .sb-filter-row {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .sb-filter-row label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-faint);
+        font-family: var(--mono);
+      }
+      .sb-filter-row select {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 4px 6px;
+        font-size: 11px;
+        font-family: var(--mono);
+        outline: none;
+        cursor: pointer;
+        width: 100%;
+        min-width: 0;
+      }
+      .sb-filter-row select:focus {
+        border-color: var(--accent);
+      }
+
+      /* Sidebar status group headers */
+      .sb-group-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 8px 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-faint);
+        font-family: var(--mono);
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        border-radius: var(--radius);
+      }
+      .sb-group-header:hover {
+        background: var(--surface-alt);
+        color: var(--text);
+      }
+      .sb-group-caret {
+        display: inline-block;
+        width: 10px;
+        font-size: 9px;
+        transition: transform 0.15s;
+      }
+      .sb-group.collapsed .sb-group-caret {
+        transform: rotate(-90deg);
+      }
+      .sb-group.collapsed .sb-group-body {
+        display: none;
+      }
+      .sb-group-label {
+        flex: 1;
+      }
+      .sb-group-count {
+        background: var(--surface-alt);
+        color: var(--text-faint);
+        border-radius: 999px;
+        padding: 1px 7px;
+        font-size: 9px;
+      }
+
+      /* Sidebar Deploy quick action */
+      .hire-row-deploy {
+        flex-shrink: 0;
+        background: var(--accent);
+        color: #1a1d1f;
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 3px 8px;
+        transition: background 0.15s;
+      }
+      .hire-row-deploy:hover {
+        background: var(--accent-light);
+      }
+      .hire-row-del {
+        flex-shrink: 0;
+        background: transparent;
+        border: none;
+        color: var(--text-faint);
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 4px;
+        border-radius: var(--radius);
+        opacity: 0;
+        transition: all 0.15s;
+      }
+      .hire-row:hover .hire-row-del {
+        opacity: 1;
+      }
+      .hire-row-del:hover {
+        color: var(--danger);
+        background: var(--danger-bg);
       }
 
       .hire-item {
@@ -442,6 +824,10 @@
         padding: 32px 40px;
         max-width: 900px;
       }
+      /* Tracker view needs the full width to fit all columns. */
+      body.view-tracker .main {
+        max-width: none;
+      }
 
       .no-hire {
         display: flex;
@@ -609,6 +995,20 @@
         background: rgba(16, 185, 129, 0.1);
         border-color: var(--success);
         color: var(--success);
+      }
+
+      /* Make embedded <select> dropdowns inside pills/headers readable
+         (browsers render <option> using OS colors by default, which
+         comes out as light-on-white on dark themes). */
+      .phase-pill select,
+      .meta-row select {
+        color: var(--text);
+      }
+      .phase-pill select option,
+      .meta-row select option,
+      select option {
+        background: var(--surface);
+        color: var(--text);
       }
 
       .section {
@@ -974,17 +1374,45 @@
         border-radius: 50%;
         background: var(--text-faint);
       }
-      .status-pending::before { background: var(--text-faint); }
-      .status-progress { color: var(--secondary); border-color: var(--secondary); }
-      .status-progress::before { background: var(--secondary); }
-      .status-ready { color: var(--warning); border-color: var(--warning); }
-      .status-ready::before { background: var(--warning); }
-      .status-deployed { color: var(--success); border-color: var(--success); background: rgba(153,174,72,0.08); }
-      .status-deployed::before { background: var(--success); }
-      .status-hold { color: var(--danger); border-color: var(--danger); }
-      .status-hold::before { background: var(--danger); }
-      .status-returned { color: var(--neutral-accent); border-color: var(--neutral-accent); }
-      .status-returned::before { background: var(--neutral-accent); }
+      .status-pending::before {
+        background: var(--text-faint);
+      }
+      .status-progress {
+        color: var(--secondary);
+        border-color: var(--secondary);
+      }
+      .status-progress::before {
+        background: var(--secondary);
+      }
+      .status-ready {
+        color: var(--warning);
+        border-color: var(--warning);
+      }
+      .status-ready::before {
+        background: var(--warning);
+      }
+      .status-deployed {
+        color: var(--success);
+        border-color: var(--success);
+        background: rgba(153, 174, 72, 0.08);
+      }
+      .status-deployed::before {
+        background: var(--success);
+      }
+      .status-hold {
+        color: var(--danger);
+        border-color: var(--danger);
+      }
+      .status-hold::before {
+        background: var(--danger);
+      }
+      .status-returned {
+        color: var(--neutral-accent);
+        border-color: var(--neutral-accent);
+      }
+      .status-returned::before {
+        background: var(--neutral-accent);
+      }
 
       .meta-row {
         display: flex;
@@ -997,8 +1425,8 @@
       /* Replacement / reassignment card */
       .replace-card {
         background: var(--surface-alt);
-        border: 1px solid var(--warning);
-        border-left: 4px solid var(--warning);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--accent);
         border-radius: var(--radius-lg);
         padding: 14px 16px;
         margin-bottom: 16px;
@@ -1006,7 +1434,7 @@
       .replace-card h3 {
         font-size: 12px;
         font-weight: 700;
-        color: var(--warning);
+        color: var(--accent);
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-family: var(--mono);
@@ -1087,15 +1515,23 @@
         box-shadow: 0 0 0 0 rgba(153, 174, 72, 0.5);
         animation: sync-pulse 2.5s infinite;
       }
-      .sync-dot.error { background: var(--danger); }
+      .sync-dot.error {
+        background: var(--danger);
+      }
       .sync-dot.syncing {
         background: var(--secondary);
         animation: sync-pulse 1s infinite;
       }
       @keyframes sync-pulse {
-        0%   { box-shadow: 0 0 0 0 rgba(153, 174, 72, 0.55); }
-        70%  { box-shadow: 0 0 0 8px rgba(153, 174, 72, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(153, 174, 72, 0); }
+        0% {
+          box-shadow: 0 0 0 0 rgba(153, 174, 72, 0.55);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(153, 174, 72, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(153, 174, 72, 0);
+        }
       }
       .sync-meta {
         font-size: 10px;
@@ -1136,12 +1572,24 @@
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         animation: toast-in 0.2s ease-out;
       }
-      .toast.success { border-left-color: var(--success); }
-      .toast.warn    { border-left-color: var(--warning); }
-      .toast.error   { border-left-color: var(--danger); }
+      .toast.success {
+        border-left-color: var(--success);
+      }
+      .toast.warn {
+        border-left-color: var(--warning);
+      }
+      .toast.error {
+        border-left-color: var(--danger);
+      }
       @keyframes toast-in {
-        from { transform: translateX(20px); opacity: 0; }
-        to   { transform: translateX(0); opacity: 1; }
+        from {
+          transform: translateX(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
       }
 
       /* View tabs */
@@ -1168,7 +1616,9 @@
         align-items: center;
         gap: 6px;
       }
-      .view-tab:hover { color: var(--text); }
+      .view-tab:hover {
+        color: var(--text);
+      }
       .view-tab.active {
         color: var(--accent);
         border-bottom-color: var(--accent);
@@ -1207,8 +1657,13 @@
         outline: none;
       }
       .tracker-toolbar input:focus,
-      .tracker-toolbar select:focus { border-color: var(--accent); }
-      .tracker-toolbar input { min-width: 220px; flex: 1; }
+      .tracker-toolbar select:focus {
+        border-color: var(--accent);
+      }
+      .tracker-toolbar input {
+        min-width: 220px;
+        flex: 1;
+      }
 
       .tracker-stats {
         display: grid;
@@ -1221,6 +1676,25 @@
         border: 1px solid var(--border);
         border-radius: var(--radius);
         padding: 10px 12px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          transform 0.05s;
+        text-align: left;
+      }
+      .tracker-stat:hover {
+        border-color: var(--accent);
+      }
+      .tracker-stat:active {
+        transform: translateY(1px);
+      }
+      .tracker-stat.on {
+        border-color: var(--accent);
+        background: rgba(153, 174, 72, 0.1);
+      }
+      .tracker-stat.on .lbl {
+        color: var(--accent);
       }
       .tracker-stat .num {
         font-family: var(--mono);
@@ -1272,9 +1746,15 @@
         cursor: pointer;
         transition: background 0.1s;
       }
-      .tracker-table tbody tr:hover { background: var(--surface); }
-      .tracker-table tbody tr.active-row { background: var(--info-bg); }
-      .tracker-table tbody tr:last-child td { border-bottom: none; }
+      .tracker-table tbody tr:hover {
+        background: var(--surface);
+      }
+      .tracker-table tbody tr.active-row {
+        background: var(--info-bg);
+      }
+      .tracker-table tbody tr:last-child td {
+        border-bottom: none;
+      }
       .tracker-table .pc-cell {
         font-family: var(--mono);
         font-weight: 600;
@@ -1412,7 +1892,7 @@
   </head>
   <body>
     <div class="app">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <h1>Deployment</h1>
           <button
@@ -1433,18 +1913,66 @@
           </div>
           <div class="sync-meta" id="sync-meta">Not connected to share</div>
           <div class="sync-actions">
-            <button class="entra-btn" id="connect-btn" onclick="connectSharedFile()">Connect Share</button>
-            <button class="entra-btn" id="refresh-btn" onclick="manualRefresh()" style="display:none" title="Pull latest changes">↻</button>
-            <button class="entra-btn" id="disconnect-btn" onclick="disconnectShared()" style="display:none" title="Disconnect from shared file">✕</button>
+            <button
+              class="entra-btn"
+              id="connect-btn"
+              onclick="connectSharedFile()"
+            >
+              Connect Share
+            </button>
+            <button
+              class="entra-btn"
+              id="refresh-btn"
+              onclick="manualRefresh()"
+              style="display: none"
+              title="Pull latest changes"
+            >
+              ↻
+            </button>
+            <button
+              class="entra-btn"
+              id="disconnect-btn"
+              onclick="disconnectShared()"
+              style="display: none"
+              title="Disconnect from shared file"
+            >
+              ✕
+            </button>
           </div>
         </div>
 
         <div class="sidebar-footer">
-          <button class="entra-btn" title="Export all data as JSON backup" onclick="exportBackup()">Backup</button>
-          <button class="entra-btn" title="Import a JSON backup file" onclick="document.getElementById('restore-input').click()">Restore</button>
-          <input type="file" id="restore-input" class="file-input-hidden" accept="application/json,.json" onchange="importBackup(event)" />
+          <button
+            class="entra-btn"
+            title="Export all data as JSON backup"
+            onclick="exportBackup()"
+          >
+            Backup
+          </button>
+          <button
+            class="entra-btn"
+            title="Import a JSON backup file"
+            onclick="document.getElementById('restore-input').click()"
+          >
+            Restore
+          </button>
+          <input
+            type="file"
+            id="restore-input"
+            class="file-input-hidden"
+            accept="application/json,.json"
+            onchange="importBackup(event)"
+          />
         </div>
       </aside>
+      <button
+        class="sidebar-toggle"
+        id="sidebar-toggle"
+        onclick="toggleSidebar()"
+        title="Hide/Show deployments list"
+      >
+        ❮
+      </button>
 
       <main class="main" id="main">
         <div class="no-hire">
@@ -1563,13 +2091,19 @@
         </div>
 
         <!-- Replacement-only fields -->
-        <div id="replacement-fields" style="display:none">
-          <div class="info-banner" style="margin-bottom:12px">
-            <strong>Replacement Device:</strong> Track the old device so it can be wiped, retired, or reassigned.
+        <div id="replacement-fields" style="display: none">
+          <div class="info-banner" style="margin-bottom: 12px">
+            <strong>Replacement Device:</strong> Track the old device so it can
+            be wiped, retired, or reassigned.
           </div>
           <div class="field">
             <label>Old PC Name (being replaced)</label>
-            <input type="text" id="m-old-pc" placeholder="OLD-PC-001" autocomplete="off" />
+            <input
+              type="text"
+              id="m-old-pc"
+              placeholder="OLD-PC-001"
+              autocomplete="off"
+            />
           </div>
           <div class="field">
             <label>Replacement Reason</label>
@@ -1591,25 +2125,35 @@
               <option value="Returned to IT">Returned to IT</option>
               <option value="Awaiting Wipe">Awaiting Wipe</option>
               <option value="Wiped">Wiped</option>
-              <option value="Awaiting Reassignment">Awaiting Reassignment</option>
+              <option value="Awaiting Reassignment">
+                Awaiting Reassignment
+              </option>
               <option value="Reassigned">Reassigned</option>
               <option value="Retired">Retired / Recycled</option>
             </select>
           </div>
           <div class="field">
             <label>Reassigned To (employee name, if applicable)</label>
-            <input type="text" id="m-reassigned-to" placeholder="e.g. John Doe" autocomplete="off" />
+            <input
+              type="text"
+              id="m-reassigned-to"
+              placeholder="e.g. John Doe"
+              autocomplete="off"
+            />
           </div>
         </div>
 
         <div class="field">
           <label>Assigned Technician</label>
-          <input
-            type="text"
-            id="m-tech"
-            placeholder="e.g. Phil Joseph"
-            autocomplete="off"
-          />
+          <select id="m-tech">
+            <option value="">— Select Technician —</option>
+            <option value="Dom">Dom</option>
+            <option value="Jack">Jack</option>
+            <option value="Pat">Pat</option>
+            <option value="Ricky">Ricky</option>
+            <option value="Tom">Tom</option>
+            <option value="Shav">Shav</option>
+          </select>
         </div>
 
         <div class="field">
@@ -2043,70 +2587,96 @@
       // Auto-added based on selected Department / Discipline.
       // ============================================================
       const DISCIPLINE_APPS = {
-        "Architecture": [
-          { text: "Install Autodesk Revit (current year)", note: "Autodesk Account / Network license" },
+        Architecture: [
+          {
+            text: "Install Autodesk Revit (current year)",
+            note: "Autodesk Account / Network license",
+          },
           { text: "Install AutoCAD Architecture", note: "" },
           { text: "Install Enscape", note: "License via Enscape portal" },
           { text: "Install SketchUp Pro", note: "" },
           { text: "Install Bluebeam Revu (Architectural workflow)", note: "" },
         ],
         "Civil-Survey": [
-          { text: "Install AutoCAD Civil 3D", note: "Required for Civil/Survey" },
+          {
+            text: "Install AutoCAD Civil 3D",
+            note: "Required for Civil/Survey",
+          },
           { text: "Install Carlson Survey / Carlson Civil", note: "" },
-          { text: "Install Trimble Business Center", note: "For survey data processing" },
+          {
+            text: "Install Trimble Business Center",
+            note: "For survey data processing",
+          },
           { text: "Install Bluebeam Revu", note: "" },
         ],
-        "Electrical": [
+        Electrical: [
           { text: "Install AutoCAD Electrical", note: "" },
           { text: "Install Revit MEP", note: "" },
-          { text: "Install SKM PowerTools", note: "License from network license server" },
+          {
+            text: "Install SKM PowerTools",
+            note: "License from network license server",
+          },
           { text: "Install ETAP (if applicable)", note: "" },
         ],
-        "Water": [
+        Water: [
           { text: "Install Bentley WaterCAD / WaterGEMS", note: "" },
           { text: "Install Bentley SewerCAD / SewerGEMS", note: "" },
           { text: "Install AutoCAD", note: "" },
           { text: "Install OpenFlows / StormCAD (if needed)", note: "" },
         ],
-        "Environmental": [
-          { text: "Install ArcGIS Pro", note: "License via ArcGIS Online / portal" },
+        Environmental: [
+          {
+            text: "Install ArcGIS Pro",
+            note: "License via ArcGIS Online / portal",
+          },
           { text: "Install EQuIS", note: "For environmental data management" },
           { text: "Install AutoCAD", note: "" },
         ],
-        "Core": [
+        Core: [
           { text: "Install AutoCAD", note: "" },
           { text: "Install Bluebeam Revu", note: "" },
         ],
         "Inspector Field": [
           { text: "Install ProjectWise Explorer", note: "" },
           { text: "Install Bluebeam Revu", note: "For field markups" },
-          { text: "Install Field Inspection app(s)", note: "Per project requirements" },
+          {
+            text: "Install Field Inspection app(s)",
+            note: "Per project requirements",
+          },
           { text: "Configure mobile hotspot / VPN access", note: "" },
         ],
         "Information Technology": [
-          { text: "Install RSAT (Remote Server Administration Tools)", note: "" },
+          {
+            text: "Install RSAT (Remote Server Administration Tools)",
+            note: "",
+          },
           { text: "Install PowerShell 7 + ISE", note: "" },
           { text: "Install PuTTY / WinSCP", note: "" },
           { text: "Install Wireshark", note: "" },
           { text: "Install Visual Studio Code", note: "" },
         ],
-        "Finance": [
-          { text: "Install ERP / Accounting client (BST11, Deltek, etc.)", note: "" },
+        Finance: [
+          {
+            text: "Install ERP / Accounting client (BST11, Deltek, etc.)",
+            note: "",
+          },
           { text: "Configure Excel add-ins / Power Query", note: "" },
         ],
         "Human Resources": [
-          { text: "Install HRIS client / shortcut (ADP, Paylocity, etc.)", note: "" },
+          {
+            text: "Install HRIS client / shortcut (ADP, Paylocity, etc.)",
+            note: "",
+          },
         ],
-        "Marketing": [
-          { text: "Install Adobe Creative Cloud (InDesign, Photoshop, Illustrator)", note: "License via Adobe Admin Console" },
+        Marketing: [
+          {
+            text: "Install Adobe Creative Cloud (InDesign, Photoshop, Illustrator)",
+            note: "License via Adobe Admin Console",
+          },
         ],
-        "Legal": [
-          { text: "Install document management client", note: "" },
-        ],
-        "Facilities": [
-          { text: "Install AutoCAD LT", note: "" },
-        ],
-        "Executive": [],
+        Legal: [{ text: "Install document management client", note: "" }],
+        Facilities: [{ text: "Install AutoCAD LT", note: "" }],
+        Executive: [],
       };
 
       // Returns the SECTIONS array tailored for a given hire (filters
@@ -2168,7 +2738,7 @@
       let activeId = null;
       let deleteTargetId = null;
       let currentView = "checklist"; // 'checklist' | 'tracker'
-      let trackerFilter = { q: "", status: "", tech: "" };
+      let trackerFilter = { q: "", status: "", tech: "", quick: "" };
 
       // ============================================================
       // Shared-File Sync (File System Access API)
@@ -2190,7 +2760,7 @@
       const SHARED_FILE_NAME = "deployments.json";
       const LOCK_FILE_NAME = "deployments.lock";
       const BACKUPS_DIR_NAME = "backups";
-      const POLL_INTERVAL_MS = 15000;
+      const POLL_INTERVAL_MS = 5000;
       const LOCK_STALE_MS = 30000;
 
       let dirHandle = null; // FileSystemDirectoryHandle for the share folder
@@ -2202,7 +2772,9 @@
       let isPushing = false;
       let lastBackupDate = ""; // YYYY-MM-DD
       const CURRENT_USER =
-        (typeof window !== "undefined" && window.navigator && navigator.userAgent
+        (typeof window !== "undefined" &&
+        window.navigator &&
+        navigator.userAgent
           ? ""
           : "") || ""; // placeholder; real username captured below
       const ACTOR =
@@ -2210,7 +2782,9 @@
         (() => {
           // Best-effort identity. Persists per browser.
           const guess =
-            (window.navigator && navigator.userAgent.match(/Windows/) && "tech") ||
+            (window.navigator &&
+              navigator.userAgent.match(/Windows/) &&
+              "tech") ||
             "tech";
           localStorage.setItem("h2m_actor", guess);
           return guess;
@@ -2307,6 +2881,22 @@
               showShareControls(true);
               return;
             }
+            // Permission is 'prompt'. We still have the handle, so we
+            // don't need the folder picker again -- just a single user
+            // gesture to call requestPermission(). Arm a one-shot click
+            // listener that does it silently.
+            dirHandle = stored;
+            armReconnectOnGesture();
+            setSyncStatus(
+              "warn",
+              "Click to reconnect",
+              "Browser dropped permission \u2014 any click will restore sync",
+            );
+            showShareControls(false, /*readOnlyMode*/ true);
+            // Also try the read-only fetch so they at least see data now
+            const okRO = await tryAutoFetchLoad();
+            if (okRO) startFetchPolling();
+            return;
           }
         } catch (e) {
           console.warn("initShared (handle restore):", e);
@@ -2318,11 +2908,7 @@
         const ok = await tryAutoFetchLoad();
         if (ok) {
           startFetchPolling();
-          setSyncStatus(
-            "live",
-            "Read-only",
-            `${SHARE_PATH_HINT}${SHARED_FILE_NAME} \u00b7 click Enable Editing to save`,
-          );
+          setSyncStatus("live", "Read-only", "Click Enable Editing to save");
           showShareControls(false, /*readOnlyMode*/ true);
         } else {
           setSyncStatus(null, "Local only", "Not connected to share");
@@ -2330,15 +2916,53 @@
         }
       }
 
+      // After browser restart the FSA permission becomes 'prompt' even
+      // though the handle is still in IndexedDB. We can re-grant it
+      // without the folder picker, but it must happen inside a user
+      // gesture. Arm a single click listener that does it silently.
+      let reconnectArmed = false;
+      function armReconnectOnGesture() {
+        if (reconnectArmed) return;
+        reconnectArmed = true;
+        const handler = async () => {
+          if (!dirHandle) {
+            cleanup();
+            return;
+          }
+          try {
+            const perm = await dirHandle.requestPermission({
+              mode: "readwrite",
+            });
+            if (perm === "granted") {
+              cleanup();
+              stopFetchPolling();
+              await openSharedFromDir();
+              await pullFromShared(false);
+              startPolling();
+              showShareControls(true, false);
+              toast("Reconnected to shared store.", "success");
+            }
+          } catch (e) {
+            console.warn("reconnect gesture:", e);
+          }
+        };
+        function cleanup() {
+          reconnectArmed = false;
+          window.removeEventListener("click", handler, true);
+          window.removeEventListener("keydown", handler, true);
+        }
+        window.addEventListener("click", handler, true);
+        window.addEventListener("keydown", handler, true);
+      }
+
       // Read-only auto-load. Works whenever the HTML is served from the
       // same folder as deployments.json over http(s):// or even via UNC
       // when the browser allows same-origin file:// fetches.
       async function tryAutoFetchLoad() {
         try {
-          const resp = await fetch(
-            `./${SHARED_FILE_NAME}?t=${Date.now()}`,
-            { cache: "no-store" },
-          );
+          const resp = await fetch(`./${SHARED_FILE_NAME}?t=${Date.now()}`, {
+            cache: "no-store",
+          });
           if (!resp.ok) return false;
           const text = await resp.text();
           if (!text.trim()) return true; // empty file is fine
@@ -2363,10 +2987,9 @@
         fetchPollTimer = setInterval(async () => {
           if (fileHandle) return; // FSA polling takes over once connected
           try {
-            const resp = await fetch(
-              `./${SHARED_FILE_NAME}?t=${Date.now()}`,
-              { cache: "no-store" },
-            );
+            const resp = await fetch(`./${SHARED_FILE_NAME}?t=${Date.now()}`, {
+              cache: "no-store",
+            });
             if (!resp.ok) return;
             const lm = resp.headers.get("Last-Modified");
             const ts = lm ? Date.parse(lm) : 0;
@@ -2397,12 +3020,17 @@
           return;
         }
         try {
-          const handle = await window.showDirectoryPicker({
-            mode: "readwrite",
-            startIn: "documents",
-            id: "h2m-deploy-share",
-          });
-          // Force a permission prompt right away
+          // If we already have a stored handle, just re-grant -- no
+          // folder picker needed. This keeps the workflow to a single
+          // permission prompt instead of picker + prompt.
+          let handle = dirHandle || (await idbGet("dirHandle"));
+          if (!handle) {
+            handle = await window.showDirectoryPicker({
+              mode: "readwrite",
+              startIn: "documents",
+              id: "h2m-deploy-share",
+            });
+          }
           const perm = await handle.requestPermission({ mode: "readwrite" });
           if (perm !== "granted") {
             toast("Permission denied for that folder.", "error");
@@ -2415,7 +3043,10 @@
           await pullFromShared(false);
           startPolling();
           showShareControls(true, false);
-          toast("Edit mode enabled. Your changes will sync to the share.", "success");
+          toast(
+            "Edit mode enabled. Your changes will sync to the share.",
+            "success",
+          );
         } catch (e) {
           if (e && e.name === "AbortError") return; // user cancelled
           console.error("connectSharedFile failed:", e);
@@ -2439,6 +3070,14 @@
         }
       }
 
+      // Some users want a true reset (e.g., switching folders). Call this
+      // from the disconnect button -- it forces a picker next time.
+      async function forgetSharedHandle() {
+        await idbDel("dirHandle");
+        dirHandle = null;
+        fileHandle = null;
+      }
+
       async function disconnectShared() {
         stopPolling();
         stopFetchPolling();
@@ -2453,11 +3092,7 @@
         const ok = await tryAutoFetchLoad();
         if (ok) {
           startFetchPolling();
-          setSyncStatus(
-            "live",
-            "Read-only",
-            `${SHARE_PATH_HINT}${SHARED_FILE_NAME} \u00b7 click Enable Editing to save`,
-          );
+          setSyncStatus("live", "Read-only", "Click Enable Editing to save");
           showShareControls(false, true);
         }
       }
@@ -2467,7 +3102,7 @@
         fileHandle = await dirHandle.getFileHandle(SHARED_FILE_NAME, {
           create: true,
         });
-        setSyncStatus("live", "Synced", `${SHARE_PATH_HINT}${SHARED_FILE_NAME}`);
+        setSyncStatus("live", "Synced", "Connected to share");
       }
 
       // ---------- Pull (read remote, merge into local) ----------
@@ -2558,7 +3193,11 @@
         try {
           const acquired = await acquireLock();
           if (!acquired) {
-            setSyncStatus("error", "Locked", "Another tech is saving — retrying");
+            setSyncStatus(
+              "error",
+              "Locked",
+              "Another tech is saving — retrying",
+            );
             setTimeout(() => {
               isPushing = false;
               pushToShared(initial);
@@ -2593,7 +3232,7 @@
           pendingPushIds.clear();
           await maybeWriteDailyBackup();
           updateSyncMeta();
-          setSyncStatus("live", "Synced", `${SHARE_PATH_HINT}${SHARED_FILE_NAME}`);
+          setSyncStatus("live", "Synced", "Connected to share");
         } catch (e) {
           console.error("pushToShared:", e);
           setSyncStatus("error", "Write error", e.message || String(e));
@@ -2637,9 +3276,7 @@
             create: true,
           });
           const w = await lockHandle.createWritable();
-          await w.write(
-            JSON.stringify({ actor: ACTOR, ts: Date.now() }),
-          );
+          await w.write(JSON.stringify({ actor: ACTOR, ts: Date.now() }));
           await w.close();
           return true;
         } catch (e) {
@@ -2710,9 +3347,15 @@
         }
       }
       async function manualRefresh() {
-        if (!fileHandle) return;
         lastFileMTime = 0; // force re-read
-        await pullFromShared(false);
+        if (fileHandle) {
+          await pullFromShared(false);
+        } else {
+          const ok = await tryAutoFetchLoad();
+          if (ok) toast("Latest changes pulled from share.", "success");
+        }
+        renderSidebar();
+        renderMain();
       }
 
       function updateSyncMeta() {
@@ -2721,8 +3364,7 @@
           hour: "2-digit",
           minute: "2-digit",
         });
-        document.getElementById("sync-meta").textContent =
-          `${SHARE_PATH_HINT}${SHARED_FILE_NAME} · last sync ${t}`;
+        document.getElementById("sync-meta").textContent = `Last sync ${t}`;
       }
 
       // ============================================================
@@ -2782,13 +3424,440 @@
       // ============================================================
       // Render Functions
       // ============================================================
+
+      // ---- Sidebar state (search + grouping + collapse + identity) ----
+      const STATUS_ORDER = [
+        "Pending Setup",
+        "In Progress",
+        "Ready for Deployment",
+        "Deployed",
+        "On Hold",
+        "Returned",
+      ];
+      let sidebarSearch = "";
+      let sidebarGroupStatus = (() => {
+        const v = localStorage.getItem("h2m_group_status");
+        return v === null ? true : v === "true";
+      })();
+      let sidebarGroupTech = (() => {
+        const v = localStorage.getItem("h2m_group_tech");
+        return v === null ? false : v === "true";
+      })();
+      let collapsedGroups = new Set(
+        JSON.parse(localStorage.getItem("h2m_collapsed_groups") || "[]"),
+      );
+      function getMyTech() {
+        return (localStorage.getItem("h2m_my_tech") || "").trim();
+      }
+      function setMyTech() {
+        const v = prompt(
+          "Enter your technician name (must match the Technician field you use on deployments):",
+          getMyTech(),
+        );
+        if (v !== null) {
+          localStorage.setItem("h2m_my_tech", v.trim());
+          renderSidebar();
+        }
+      }
+      function onSidebarSearch(v) {
+        sidebarSearch = (v || "").toLowerCase().trim();
+        renderSidebar();
+      }
+      function toggleSidebarGroup(kind) {
+        if (kind === "status") {
+          sidebarGroupStatus = !sidebarGroupStatus;
+          localStorage.setItem("h2m_group_status", String(sidebarGroupStatus));
+        } else if (kind === "tech") {
+          sidebarGroupTech = !sidebarGroupTech;
+          localStorage.setItem("h2m_group_tech", String(sidebarGroupTech));
+        }
+        renderSidebar();
+      }
+      function toggleGroupCollapse(key) {
+        if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+        else collapsedGroups.add(key);
+        localStorage.setItem(
+          "h2m_collapsed_groups",
+          JSON.stringify([...collapsedGroups]),
+        );
+        renderSidebar();
+      }
+      function matchesSidebarSearch(h) {
+        if (!sidebarSearch) return true;
+        const hay = [
+          h.name,
+          h.email,
+          h.department,
+          h.empType,
+          h.deviceType,
+          h.pcName,
+          h.oldPcName,
+          h.office,
+          h.technician,
+          h.status,
+        ]
+          .filter(Boolean)
+          .join(" \u0001 ")
+          .toLowerCase();
+        return hay.includes(sidebarSearch);
+      }
+
       function renderSidebar() {
+        // Reflect state on the controls (called every render so DOM
+        // re-renders stay in sync).
+        const search = document.getElementById("sb-search");
+        if (search && search.value !== sidebarSearch)
+          search.value = sidebarSearch;
+        const chipS = document.getElementById("chip-status");
+        const chipT = document.getElementById("chip-tech");
+        if (chipS) chipS.classList.toggle("on", sidebarGroupStatus);
+        if (chipT) chipT.classList.toggle("on", sidebarGroupTech);
+        const who = document.getElementById("who-am-i");
+        if (who) {
+          const me = getMyTech();
+          who.innerHTML = `You: <strong>${esc(me || "\u2014")}</strong> <a onclick="setMyTech()">change</a>`;
+        }
+
+        const list = document.getElementById("hire-list");
+        const liveIds = Object.keys(db).filter((id) => !db[id].deleted);
+        const filteredIds = liveIds.filter((id) =>
+          matchesSidebarSearch(db[id]),
+        );
+
+        if (liveIds.length === 0) {
+          list.innerHTML =
+            '<div class="empty-state">No deployments yet.<br>Click <strong>+ New Deployment</strong> to start.</div>';
+          return;
+        }
+        if (filteredIds.length === 0) {
+          list.innerHTML =
+            '<div class="empty-state">No matches.<br>Try a different search term.</div>';
+          return;
+        }
+
+        const me = getMyTech();
+        const sortByRecent = (a, b) =>
+          (db[b].updatedAt || db[b].created || 0) -
+          (db[a].updatedAt || db[a].created || 0);
+
+        // ----- mode: flat (no grouping) -----
+        if (!sidebarGroupStatus && !sidebarGroupTech) {
+          const sorted = filteredIds.slice().sort(sortByRecent);
+          list.innerHTML = sorted.map(rowHtml).join("");
+          return;
+        }
+
+        // ----- mode: status only -----
+        if (sidebarGroupStatus && !sidebarGroupTech) {
+          list.innerHTML = renderStatusGroups(
+            filteredIds.slice().sort(sortByRecent),
+            "",
+          );
+          return;
+        }
+
+        // ----- mode: tech only -----
+        if (!sidebarGroupStatus && sidebarGroupTech) {
+          list.innerHTML = renderTechGroups(
+            filteredIds,
+            sortByRecent,
+            me,
+            false,
+          );
+          return;
+        }
+
+        // ----- mode: tech + status (nested) -----
+        list.innerHTML = renderTechGroups(filteredIds, sortByRecent, me, true);
+      }
+
+      function rowHtml(id) {
+        const h = db[id];
+        const active = id === activeId ? " active" : "";
+        const dot = sidebarGroupStatus
+          ? ""
+          : `<span class="hire-row-dot ${statusClass(h.status)}" title="${esc(h.status || "Pending Setup")}"></span>`;
+        const tag = h.pcName || h.oldPcName || "";
+        return `<div class="hire-row${active}" onclick="selectHire('${id}')">
+          ${dot}
+          <span class="hire-row-name" title="${esc(h.name)}">${esc(h.name)}</span>
+          <span class="hire-row-tag" title="${esc(tag)}">${esc(tag)}</span>
+          <button class="hire-row-del" title="Delete" onclick="event.stopPropagation();deleteHire('${id}')">\u2715</button>
+        </div>`;
+      }
+
+      function renderStatusGroups(ids, prefix) {
+        const buckets = new Map();
+        STATUS_ORDER.forEach((s) => buckets.set(s, []));
+        ids.forEach((id) => {
+          const s = db[id].status || "Pending Setup";
+          if (!buckets.has(s)) buckets.set(s, []);
+          buckets.get(s).push(id);
+        });
+        let html = "";
+        for (const [status, list] of buckets) {
+          if (list.length === 0) continue;
+          const key = `${prefix}status:${status}`;
+          const collapsed = collapsedGroups.has(key);
+          html += `<div class="grp${collapsed ? " collapsed" : ""}">
+            <div class="grp-header" onclick="toggleGroupCollapse('${key}')">
+              <span class="grp-caret">\u25be</span>
+              <span class="grp-label">${esc(status)}</span>
+              <span class="grp-count">${list.length}</span>
+            </div>
+            <div class="grp-body">${list.map(rowHtml).join("")}</div>
+          </div>`;
+        }
+        return html;
+      }
+
+      function renderTechGroups(ids, sortFn, me, nestStatus) {
+        // Bucket by technician (case-insensitive match for "Mine").
+        const buckets = new Map();
+        ids.forEach((id) => {
+          const t = (db[id].technician || "").trim();
+          const key = t || "__unassigned__";
+          if (!buckets.has(key)) buckets.set(key, []);
+          buckets.get(key).push(id);
+        });
+        // Order: Mine first, then alpha by tech name, Unassigned last.
+        const meKey = me ? me : null;
+        const techNames = [...buckets.keys()].filter(
+          (k) => k !== "__unassigned__",
+        );
+        techNames.sort((a, b) => {
+          if (meKey && a.toLowerCase() === meKey.toLowerCase()) return -1;
+          if (meKey && b.toLowerCase() === meKey.toLowerCase()) return 1;
+          return a.localeCompare(b);
+        });
+        const order = [...techNames];
+        if (buckets.has("__unassigned__")) order.push("__unassigned__");
+
+        let html = "";
+        for (const techKey of order) {
+          const list = buckets.get(techKey).slice().sort(sortFn);
+          const isMine = meKey && techKey.toLowerCase() === meKey.toLowerCase();
+          const label =
+            techKey === "__unassigned__"
+              ? "Unassigned"
+              : isMine
+                ? `Mine (${techKey})`
+                : techKey;
+          const groupKey = `tech:${techKey}`;
+          const collapsed = collapsedGroups.has(groupKey);
+          const inner = nestStatus
+            ? renderStatusGroups(list, `${groupKey}/`)
+            : list.map(rowHtml).join("");
+          html += `<div class="grp${collapsed ? " collapsed" : ""}">
+            <div class="grp-header tech-header" onclick="toggleGroupCollapse('${groupKey}')">
+              <span class="grp-caret">\u25be</span>
+              <span class="grp-label">${esc(label)}</span>
+              <span class="grp-count">${list.length}</span>
+            </div>
+            <div class="grp-body${nestStatus ? " tech-body" : ""}">${inner}</div>
+          </div>`;
+        }
+        return html;
+      }
+
+      function renderSidebar() {
+        const list = document.getElementById("hire-list");
+        if (!list) return;
+
+        // Build filter bar (status sort + tech picker) once.
+        ensureSidebarFilterBar();
+        // Reflect current state on the controls.
+        const sortSel = document.getElementById("sb-sort");
+        const techSel = document.getElementById("sb-tech");
+        if (sortSel) sortSel.value = sidebarSort;
+        if (techSel) {
+          // Rebuild tech options to include any free-text legacy techs in db.
+          const TECHS = ["Dom", "Jack", "Pat", "Ricky", "Tom", "Shav"];
+          const extra = new Set();
+          Object.values(db).forEach((h) => {
+            if (h.deleted) return;
+            const t = (h.technician || "").trim();
+            if (t && !TECHS.includes(t)) extra.add(t);
+          });
+          const want = sidebarTech;
+          techSel.innerHTML =
+            `<option value="">All Technicians</option>` +
+            `<option value="__unassigned__">Unassigned</option>` +
+            TECHS.map(
+              (t) => `<option value="${esc(t)}">${esc(t)}</option>`,
+            ).join("") +
+            [...extra]
+              .map(
+                (t) => `<option value="${esc(t)}">${esc(t)} (legacy)</option>`,
+              )
+              .join("");
+          techSel.value = want;
+        }
+
+        const liveIds = Object.keys(db).filter((id) => !db[id].deleted);
+        // Apply tech filter
+        const filteredIds = liveIds.filter((id) => {
+          if (!sidebarTech) return true;
+          const t = (db[id].technician || "").trim();
+          if (sidebarTech === "__unassigned__") return !t;
+          return t.toLowerCase() === sidebarTech.toLowerCase();
+        });
+
+        if (liveIds.length === 0) {
+          list.innerHTML =
+            '<div class="empty-state">No deployments yet.<br>Click <strong>+ New Deployment</strong> to start.</div>';
+          return;
+        }
+        if (filteredIds.length === 0) {
+          list.innerHTML =
+            '<div class="empty-state">No deployments for this technician.</div>';
+          return;
+        }
+
+        // ---- sort/group ----
+        if (sidebarSort === "status") {
+          // Group by status in canonical order.
+          const STATUS_GROUPS = [
+            "Pending Setup",
+            "In Progress",
+            "Ready for Deployment",
+            "Deployed",
+            "On Hold",
+            "Returned",
+          ];
+          const buckets = new Map();
+          STATUS_GROUPS.forEach((s) => buckets.set(s, []));
+          filteredIds.forEach((id) => {
+            const s = db[id].status || "Pending Setup";
+            if (!buckets.has(s)) buckets.set(s, []);
+            buckets.get(s).push(id);
+          });
+          // Within a status, sort most-recent first.
+          const sortRecent = (a, b) =>
+            (db[b].updatedAt || db[b].created || 0) -
+            (db[a].updatedAt || db[a].created || 0);
+          let html = "";
+          for (const [status, ids] of buckets) {
+            if (ids.length === 0) continue;
+            ids.sort(sortRecent);
+            const sCls = statusClass(status);
+            const key = `status:${status}`;
+            const collapsed = sidebarCollapsedGroups.has(key);
+            html += `<div class="sb-group${collapsed ? " collapsed" : ""}">
+              <div class="sb-group-header" onclick="toggleSidebarGroup('${key}')">
+                <span class="sb-group-caret">\u25be</span>
+                <span class="hire-row-dot ${sCls}"></span>
+                <span class="sb-group-label">${esc(status)}</span>
+                <span class="sb-group-count">${ids.length}</span>
+              </div>
+              <div class="sb-group-body">${ids.map(sidebarRowHtml).join("")}</div>
+            </div>`;
+          }
+          list.innerHTML = html;
+          return;
+        }
+
+        // Sort modes: recent / name
+        const sorted = filteredIds.slice().sort((a, b) => {
+          if (sidebarSort === "name") {
+            return (db[a].name || "").localeCompare(db[b].name || "");
+          }
+          return (
+            (db[b].updatedAt || db[b].created || 0) -
+            (db[a].updatedAt || db[a].created || 0)
+          );
+        });
+        list.innerHTML = sorted.map(sidebarRowHtml).join("");
+      }
+
+      // One sidebar row.
+      function sidebarRowHtml(id) {
+        const h = db[id];
+        const active = id === activeId ? " active" : "";
+        const status = h.status || "Pending Setup";
+        const sCls = statusClass(status);
+        const isReady = status === "Ready for Deployment";
+        const deployBtn = isReady
+          ? `<button class="hire-row-deploy" title="Mark as Deployed" onclick="event.stopPropagation();markDeployed('${id}')">Deploy</button>`
+          : "";
+        return `<div class="hire-row${active}" onclick="selectHire('${id}')">
+          <span class="hire-row-dot ${sCls}" title="${esc(status)}"></span>
+          <span class="hire-row-name" title="${esc(h.name)}">${esc(h.name)}</span>
+          <span class="hire-row-status ${sCls}" title="${esc(status)}">${esc(status)}</span>
+          ${deployBtn}
+          <button class="hire-row-del" title="Delete" onclick="event.stopPropagation();deleteHire('${id}')">\u2715</button>
+        </div>`;
+      }
+
+      // Sidebar filter state (persisted).
+      let sidebarSort = localStorage.getItem("h2m_sb_sort") || "status"; // status | recent | name
+      let sidebarTech = localStorage.getItem("h2m_sb_tech") || "";
+      let sidebarCollapsedGroups = new Set(
+        JSON.parse(localStorage.getItem("h2m_sb_collapsed_groups") || "[]"),
+      );
+      function toggleSidebarGroup(key) {
+        if (sidebarCollapsedGroups.has(key)) sidebarCollapsedGroups.delete(key);
+        else sidebarCollapsedGroups.add(key);
+        localStorage.setItem(
+          "h2m_sb_collapsed_groups",
+          JSON.stringify([...sidebarCollapsedGroups]),
+        );
+        renderSidebar();
+      }
+      function setSidebarSort(v) {
+        sidebarSort = v;
+        localStorage.setItem("h2m_sb_sort", v);
+        renderSidebar();
+      }
+      function setSidebarTech(v) {
+        sidebarTech = v;
+        localStorage.setItem("h2m_sb_tech", v);
+        renderSidebar();
+      }
+      function ensureSidebarFilterBar() {
+        if (document.getElementById("sb-filter-bar")) return;
+        const list = document.getElementById("hire-list");
+        if (!list || !list.parentNode) return;
+        const bar = document.createElement("div");
+        bar.id = "sb-filter-bar";
+        bar.className = "sb-filter-bar";
+        bar.innerHTML = `
+          <div class="sb-filter-row">
+            <label>Sort</label>
+            <select id="sb-sort" onchange="setSidebarSort(this.value)">
+              <option value="status">By Status</option>
+              <option value="recent">Most Recent</option>
+              <option value="name">Name (A\u2013Z)</option>
+            </select>
+          </div>
+          <div class="sb-filter-row">
+            <label>Tech</label>
+            <select id="sb-tech" onchange="setSidebarTech(this.value)"></select>
+          </div>`;
+        list.parentNode.insertBefore(bar, list);
+      }
+
+      // Sidebar collapse toggle (state persisted)
+      function toggleSidebar() {
+        const sb = document.getElementById("sidebar");
+        const btn = document.getElementById("sidebar-toggle");
+        const collapsed = sb.classList.toggle("collapsed");
+        localStorage.setItem("h2m_sb_collapsed", String(collapsed));
+        if (btn) btn.textContent = collapsed ? "\u276f" : "\u276e";
+      }
+      function applySidebarCollapsedState() {
+        const collapsed = localStorage.getItem("h2m_sb_collapsed") === "true";
+        const sb = document.getElementById("sidebar");
+        const btn = document.getElementById("sidebar-toggle");
+        if (sb && collapsed) sb.classList.add("collapsed");
+        if (btn) btn.textContent = collapsed ? "\u276f" : "\u276e";
+      }
+
+      function renderSidebar_LEGACY() {
         const list = document.getElementById("hire-list");
         const keys = Object.keys(db)
           .filter((id) => !db[id].deleted)
-          .sort(
-          (a, b) => db[b].created - db[a].created,
-        );
+          .sort((a, b) => db[b].created - db[a].created);
 
         if (keys.length === 0) {
           list.innerHTML =
@@ -2853,10 +3922,10 @@
         const inProgressCount = liveIds
           .map((id) => db[id])
           .filter((h) => {
-          const t = getTotal(h) || 1;
-          const d = getChecked(h);
-          return !(d === t || h.forceComplete) && h.status !== "Deployed";
-        }).length;
+            const t = getTotal(h) || 1;
+            const d = getChecked(h);
+            return !(d === t || h.forceComplete) && h.status !== "Deployed";
+          }).length;
         const tabs = `
       <div class="view-tabs">
         <button class="view-tab${currentView === "checklist" ? " active" : ""}" onclick="setView('checklist')">
@@ -2877,6 +3946,8 @@
 
       function setView(view) {
         currentView = view;
+        document.body.classList.toggle("view-tracker", view === "tracker");
+        document.body.classList.toggle("view-checklist", view === "checklist");
         renderMain();
       }
 
@@ -2889,10 +3960,8 @@
         const h = db[activeId];
         const done = getChecked(h);
         const visibleEntries = effectiveSectionsWithKeys(h);
-        const totalItems = visibleEntries.reduce(
-          (a, { sec }) => a + sec.items.length,
-          0,
-        ) || 1;
+        const totalItems =
+          visibleEntries.reduce((a, { sec }) => a + sec.items.length, 0) || 1;
         const pct = Math.round((done / totalItems) * 100);
         const isComplete = done === totalItems || h.forceComplete;
 
@@ -2906,7 +3975,7 @@
           .join("");
 
         const completeBanner = isComplete
-          ? `<div class="complete-banner">✓ Deployment complete -- laptop ready for ${esc(h.name)}</div>`
+          ? `<div class="complete-banner">✓ Checklist completed -- laptop ready for ${esc(h.name)}</div>`
           : "";
 
         const sectionsHtml = visibleEntries
@@ -2992,7 +4061,7 @@
             )
             .join("");
           replaceCardHtml = `<div class="replace-card">
-          <h3>⚠ Replacement / Reassignment Tracker</h3>
+          <h3>Replacement / Reassignment Tracker</h3>
           <div class="replace-grid">
             <div>
               <div class="rg-label">Old PC Name</div>
@@ -3032,6 +4101,21 @@
           )
           .join("");
 
+        const currentTech = h.technician || "";
+        const techList = ["Dom", "Jack", "Pat", "Ricky", "Tom", "Shav"];
+        const techOptions =
+          `<option value=""${currentTech === "" ? " selected" : ""}>\u2014 Select \u2014</option>` +
+          techList
+            .map(
+              (t) =>
+                `<option value="${esc(t)}"${currentTech === t ? " selected" : ""}>${esc(t)}</option>`,
+            )
+            .join("") +
+          // Preserve any legacy free-text technician value so it isn't lost.
+          (currentTech && !techList.includes(currentTech)
+            ? `<option value="${esc(currentTech)}" selected>${esc(currentTech)} (legacy)</option>`
+            : "");
+
         return `
       <div class="hire-header">
         <div class="hire-title-wrap">
@@ -3043,7 +4127,7 @@
             ${statusBadgeHtml}
             <select onchange="updateField('status', this.value); renderSidebar(); renderMain();" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-family:var(--mono);font-size:11px;">${statusOptions}</select>
             ${h.deviceType ? `<span class="phase-pill">${esc(h.deviceType)}</span>` : ""}
-            <span class="phase-pill" title="Assigned technician">👤 <input type="text" value="${esc(h.technician || "")}" placeholder="Technician" oninput="updateField('technician', this.value)" onchange="renderSidebar();" style="background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:140px;" /></span>
+            <span class="phase-pill" title="Assigned technician">👤 <select onchange="updateField('technician', this.value); renderSidebar();" style="background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;cursor:pointer;">${techOptions}</select></span>
           </div>
         </div>
         <div class="header-actions">
@@ -3107,7 +4191,9 @@
 
         // Build technician options for filter
         const techs = Array.from(
-          new Set(all.map(({ h }) => (h.technician || "").trim()).filter(Boolean)),
+          new Set(
+            all.map(({ h }) => (h.technician || "").trim()).filter(Boolean),
+          ),
         ).sort();
         const techOpts = techs
           .map(
@@ -3131,9 +4217,38 @@
 
         // Apply filters
         const q = trackerFilter.q.trim().toLowerCase();
+        const quickMatch = ({ h }) => {
+          switch (trackerFilter.quick) {
+            case "active": {
+              const t = getTotal(h) || 1;
+              const d = getChecked(h);
+              const complete = d === t || h.forceComplete;
+              return !(h.status === "Deployed" || complete);
+            }
+            case "ready":
+              return h.status === "Ready for Deployment";
+            case "deployed": {
+              const t = getTotal(h) || 1;
+              const d = getChecked(h);
+              const complete = d === t || h.forceComplete;
+              return h.status === "Deployed" || complete;
+            }
+            case "hold":
+              return h.status === "On Hold";
+            case "replacement":
+              return (
+                h.deviceType === "Replacement" ||
+                h.deviceType === "Redeployment"
+              );
+            default:
+              return true;
+          }
+        };
         const filtered = all
           .filter(({ h }) => {
-            if (trackerFilter.status && h.status !== trackerFilter.status)
+            if (!quickMatch({ h })) return false;
+            const hs = h.status || "Pending Setup";
+            if (trackerFilter.status && hs !== trackerFilter.status)
               return false;
             if (
               trackerFilter.tech &&
@@ -3161,14 +4276,18 @@
           })
           .sort((a, b) => (b.h.created || 0) - (a.h.created || 0));
 
+        // Determine which quick-filter tile is active.
+        const activeQuick = trackerFilter.quick || "total";
+        const tileCls = (key) =>
+          `tracker-stat${activeQuick === key ? " on" : ""}`;
         const stats = `
       <div class="tracker-stats">
-        <div class="tracker-stat"><div class="num">${total}</div><div class="lbl">Total</div></div>
-        <div class="tracker-stat"><div class="num">${counts.inprogress}</div><div class="lbl">Active</div></div>
-        <div class="tracker-stat"><div class="num">${counts.ready}</div><div class="lbl">Ready</div></div>
-        <div class="tracker-stat"><div class="num">${counts.deployed}</div><div class="lbl">Deployed</div></div>
-        <div class="tracker-stat"><div class="num">${counts.hold}</div><div class="lbl">On Hold</div></div>
-        <div class="tracker-stat"><div class="num">${counts.replacement}</div><div class="lbl">Replacements</div></div>
+        <button type="button" class="${tileCls("total")}" onclick="setTrackerQuick('total')" title="Show all deployments"><div class="num">${total}</div><div class="lbl">Total</div></button>
+        <button type="button" class="${tileCls("active")}" onclick="setTrackerQuick('active')" title="Show non-completed deployments"><div class="num">${counts.inprogress}</div><div class="lbl">In Progress</div></button>
+        <button type="button" class="${tileCls("ready")}" onclick="setTrackerQuick('ready')" title="Show Ready for Deployment only"><div class="num">${counts.ready}</div><div class="lbl">Ready</div></button>
+        <button type="button" class="${tileCls("deployed")}" onclick="setTrackerQuick('deployed')" title="Show Deployed only"><div class="num">${counts.deployed}</div><div class="lbl">Deployed</div></button>
+        <button type="button" class="${tileCls("hold")}" onclick="setTrackerQuick('hold')" title="Show On Hold only"><div class="num">${counts.hold}</div><div class="lbl">On Hold</div></button>
+        <button type="button" class="${tileCls("replacement")}" onclick="setTrackerQuick('replacement')" title="Show Replacement devices only"><div class="num">${counts.replacement}</div><div class="lbl">Replacements</div></button>
       </div>`;
 
         const toolbar = `
@@ -3277,7 +4396,19 @@
       }
 
       function clearTrackerFilters() {
-        trackerFilter = { q: "", status: "", tech: "" };
+        trackerFilter = { q: "", status: "", tech: "", quick: "" };
+        renderMain();
+      }
+
+      // Quick-filter from a stat tile. Toggling the active tile clears it.
+      function setTrackerQuick(key) {
+        if (key === "total") {
+          trackerFilter.quick = "";
+        } else if (trackerFilter.quick === key) {
+          trackerFilter.quick = "";
+        } else {
+          trackerFilter.quick = key;
+        }
         renderMain();
       }
 
@@ -3294,12 +4425,51 @@
         renderMain();
       }
 
+      // Recompute deployment status based on checklist completion.
+      // Only flips between Pending/In Progress and Ready for Deployment.
+      // Never overrides a manual choice of Deployed / On Hold / Returned.
+      function recomputeAutoStatus(h) {
+        if (!h) return false;
+        const total = getTotal(h) || 0;
+        const done = getChecked(h);
+        const isComplete = h.forceComplete || (total > 0 && done === total);
+        const cur = h.status || "Pending Setup";
+        if (["Deployed", "On Hold", "Returned"].includes(cur)) return false;
+        if (isComplete && cur !== "Ready for Deployment") {
+          h.status = "Ready for Deployment";
+          return true;
+        }
+        if (!isComplete && cur === "Ready for Deployment") {
+          h.status = done > 0 ? "In Progress" : "Pending Setup";
+          return true;
+        }
+        if (!isComplete && cur === "Pending Setup" && done > 0) {
+          h.status = "In Progress";
+          return true;
+        }
+        return false;
+      }
+
+      // Sidebar quick action: mark a record as Deployed.
+      function markDeployed(id) {
+        if (!db[id]) return;
+        db[id].status = "Deployed";
+        db[id].updatedAt = Date.now();
+        db[id].updatedBy = ACTOR;
+        schedulePush(id);
+        saveLocal();
+        renderSidebar();
+        renderMain();
+        toast(`${db[id].name}: marked as Deployed.`, "success");
+      }
+
       function toggleItem(si, ii) {
         if (!activeId) return;
         const key = `${si}_${ii}`;
         const h = db[activeId];
         if (!h.checks) h.checks = {};
         h.checks[key] = !h.checks[key];
+        recomputeAutoStatus(h);
         save();
         renderSidebar();
         renderMain();
@@ -3333,6 +4503,7 @@
       function confirmReset() {
         db[activeId].checks = {};
         db[activeId].forceComplete = false;
+        recomputeAutoStatus(db[activeId]);
         save();
         renderSidebar();
         renderMain();
@@ -3349,6 +4520,7 @@
           });
         });
         h.forceComplete = false;
+        recomputeAutoStatus(h);
         save();
         renderSidebar();
         renderMain();
@@ -3358,6 +4530,7 @@
         if (!activeId) return;
         const h = db[activeId];
         h.forceComplete = !h.forceComplete;
+        recomputeAutoStatus(h);
         save();
         renderSidebar();
         renderMain();
@@ -3486,10 +4659,8 @@
 
         // Calculate total items based on employee type
         const pdfEntries = effectiveSectionsWithKeys(h);
-        const pdfTotalItems = pdfEntries.reduce(
-          (a, { sec }) => a + sec.items.length,
-          0,
-        ) || 1;
+        const pdfTotalItems =
+          pdfEntries.reduce((a, { sec }) => a + sec.items.length, 0) || 1;
         const progress = Math.round((done / pdfTotalItems) * 100);
 
         const infoItems = [
@@ -3678,7 +4849,14 @@
         // Default technician to signed-in Entra user when available
         const techField = document.getElementById("m-tech");
         if (techField && msalAccount) {
-          techField.value = msalAccount.name || msalAccount.username || "";
+          const want = (msalAccount.name || msalAccount.username || "").trim();
+          // Only set if it matches one of the known options
+          for (const opt of techField.options) {
+            if (opt.value && opt.value.toLowerCase() === want.toLowerCase()) {
+              techField.value = opt.value;
+              break;
+            }
+          }
         }
         // Show start date field by default; hide replacement fields by default
         document.getElementById("start-date-field").style.display = "flex";
@@ -3715,14 +4893,12 @@
           empType: document.getElementById("m-emp-type").value.trim(),
           start: document.getElementById("m-start").value,
           deviceType,
-          status:
-            document.getElementById("m-status").value || "Pending Setup",
+          status: document.getElementById("m-status").value || "Pending Setup",
           technician:
             document.getElementById("m-tech")?.value.trim() ||
             (msalAccount && (msalAccount.name || msalAccount.username)) ||
             "",
-          oldPcName:
-            document.getElementById("m-old-pc")?.value.trim() || "",
+          oldPcName: document.getElementById("m-old-pc")?.value.trim() || "",
           replaceReason:
             document.getElementById("m-replace-reason")?.value || "",
           oldDisposition:
@@ -3888,14 +5064,18 @@
       load();
       const firstId = Object.keys(db)
         .filter((id) => !db[id].deleted)
-        .sort(
-        (a, b) => (db[b].created || 0) - (db[a].created || 0),
-      )[0];
+        .sort((a, b) => (db[b].created || 0) - (db[a].created || 0))[0];
       if (firstId) {
         activeId = firstId;
       }
       renderSidebar();
       renderMain();
+      applySidebarCollapsedState();
+      document.body.classList.toggle("view-tracker", currentView === "tracker");
+      document.body.classList.toggle(
+        "view-checklist",
+        currentView === "checklist",
+      );
       // Try to auto-restore the shared file connection from a previous
       // session. If it succeeds, we silently pull the latest data.
       initShared();
