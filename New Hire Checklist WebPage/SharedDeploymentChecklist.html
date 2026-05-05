@@ -1974,6 +1974,13 @@
           >
             Restore
           </button>
+          <button
+            class="entra-btn"
+            title="View deployment instructions"
+            onclick="openInstructionsModal()"
+          >
+            📖 Instructions
+          </button>
           <input
             type="file"
             id="restore-input"
@@ -2270,6 +2277,328 @@
       </div>
     </div>
 
+    <!-- Instructions Modal -->
+    <div class="modal-overlay" id="instructions-modal">
+      <div class="modal" style="width: 600px">
+        <h2>Deployment Instructions</h2>
+        <p class="modal-subtitle">
+          Select a deployment type to view instructions
+        </p>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+          "
+        >
+          <button
+            class="btn"
+            style="
+              padding: 12px;
+              text-align: left;
+              background: var(--surface);
+              border: 1px solid var(--border-light);
+              justify-content: flex-start;
+            "
+            onclick="openInstructionDetail('autopilot')"
+          >
+            <span style="font-weight: 600">🚀 Autopilot Enabled Machines</span
+            ><br />
+            <span style="font-size: 11px; color: var(--text-muted)"
+              >Prerequisites, device configuration & end-user setup</span
+            >
+          </button>
+          <button
+            class="btn"
+            style="
+              padding: 12px;
+              text-align: left;
+              background: var(--surface);
+              border: 1px solid var(--border-light);
+              justify-content: flex-start;
+            "
+            onclick="openInstructionDetail('non-autopilot')"
+          >
+            <span style="font-weight: 600">💻 Non-Autopilot Spare Machines</span
+            ><br />
+            <span style="font-size: 11px; color: var(--text-muted)"
+              >Wipe, setup, domain join & Intune configuration</span
+            >
+          </button>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+            justify-content: flex-end;
+          "
+        >
+          <button class="btn" onclick="closeInstructionsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Autopilot Instructions Detail Modal -->
+    <div class="modal-overlay" id="autopilot-instructions-modal">
+      <div
+        class="modal"
+        style="width: 700px; max-height: 85vh; overflow-y: auto"
+      >
+        <div
+          style="
+            position: sticky;
+            top: 0;
+            background: var(--surface-alt);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+          "
+        >
+          <h2>Deploying Autopilot Enabled Machines</h2>
+          <button
+            class="btn"
+            style="
+              position: absolute;
+              top: 28px;
+              right: 28px;
+              padding: 4px 8px;
+              font-size: 18px;
+            "
+            onclick="closeInstructionDetail()"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style="padding: 20px; font-size: 13px; line-height: 1.8">
+          <h3
+            style="
+              color: var(--accent);
+              margin-top: 16px;
+              margin-bottom: 8px;
+              font-size: 14px;
+            "
+          >
+            Prerequisites before Autopilot Device Setup
+          </h3>
+          <ol style="margin-left: 20px; margin-bottom: 16px">
+            <li style="margin-bottom: 8px">
+              Have the user or manager of new hire fill out the Device Setup
+              Ticket form on the H2M Helpdesk.
+            </li>
+          </ol>
+
+          <h3
+            style="
+              color: var(--accent);
+              margin-top: 16px;
+              margin-bottom: 8px;
+              font-size: 14px;
+            "
+          >
+            Device Configuration (Autopilot Stager)
+          </h3>
+          <ol style="margin-left: 20px; margin-bottom: 16px">
+            <li style="margin-bottom: 8px">
+              When prompted with the H2M logoed login screen, login with the
+              "Autopilot Stager" account.
+            </li>
+            <li style="margin-bottom: 8px">
+              Rename the device to fit the naming scheme, (OFFICE
+              CODE-username), then restart.
+            </li>
+            <li style="margin-bottom: 8px">
+              After computer name is changed, open Active Directory. Navigate to
+              the _Autopilot Creation OU. Move the computer object to the proper
+              OU so GPOs can be applied to the machine.
+            </li>
+            <li style="margin-bottom: 8px">
+              Add device to "Intune-Setup-Devices" group in Entra.
+            </li>
+            <li style="margin-bottom: 8px">
+              Complete the approriate tasks in the checklist
+            </li>
+          </ol>
+
+          <h3
+            style="
+              color: var(--accent);
+              margin-top: 16px;
+              margin-bottom: 8px;
+              font-size: 14px;
+            "
+          >
+            Device Configuration (End User)
+          </h3>
+          <ol style="margin-left: 20px; margin-bottom: 16px">
+            <li style="margin-bottom: 8px">
+              Set the assigned user as the primary user in Intune, then sync in
+              Company Portal.
+            </li>
+            <li style="margin-bottom: 8px">
+              For users in the same office, have the user come to the IT room to
+              log into the laptop before deploying it.
+              <ul style="margin-left: 20px; margin-top: 4px">
+                <li>
+                  For remote users, ship the laptop to user/office, remote into
+                  laptop after it arrives and then continue the process from
+                  there. Once the user confirms everything is on the new laptop,
+                  send old laptop back to Melville
+                </li>
+              </ul>
+            </li>
+            <li style="margin-bottom: 8px">
+              Complete the rest of the checlist
+            </li>
+          </ol>
+        </div>
+
+        <div
+          style="
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+          "
+        >
+          <button class="btn" onclick="closeInstructionDetail()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Non-Autopilot Instructions Detail Modal -->
+    <div class="modal-overlay" id="non-autopilot-instructions-modal">
+      <div
+        class="modal"
+        style="width: 700px; max-height: 85vh; overflow-y: auto"
+      >
+        <div
+          style="
+            position: sticky;
+            top: 0;
+            background: var(--surface-alt);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+          "
+        >
+          <h2>Deploying Non-Autopilot Enabled Spare Machines</h2>
+          <button
+            class="btn"
+            style="
+              position: absolute;
+              top: 28px;
+              right: 28px;
+              padding: 4px 8px;
+              font-size: 18px;
+            "
+            onclick="closeInstructionDetail()"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style="padding: 20px; font-size: 13px; line-height: 1.8">
+          <h3
+            style="
+              color: var(--accent);
+              margin-top: 16px;
+              margin-bottom: 8px;
+              font-size: 14px;
+            "
+          >
+            Setup on Device
+          </h3>
+          <ol style="margin-left: 20px; margin-bottom: 16px">
+            <li style="margin-bottom: 8px">
+              Wipe the machine using the latest version of Windows OS.
+            </li>
+            <li style="margin-bottom: 8px">
+              After successful Windows installation, the machine will display an
+              option to name the device.
+              <ul style="margin-left: 20px; margin-top: 4px">
+                <li>
+                  Name the device with the proper naming scheme, (OFFICE
+                  CODE-spare), then click next.
+                </li>
+              </ul>
+            </li>
+            <li style="margin-bottom: 8px">
+              Choose to setup the device for work or school.
+            </li>
+            <li style="margin-bottom: 8px">
+              Choose to domain join the device, then when prompted to set things
+              up for work or school, choose sign in options.
+            </li>
+            <li style="margin-bottom: 8px">
+              Create the local "h2m" account with the standard password and
+              disable all privacy settings.
+            </li>
+            <li style="margin-bottom: 8px">
+              After logging into the local "h2m" account, the machine will
+              display the desktop. The first thing that should be done is to
+              confirm Windows is activated. If this option does not appear, then
+              move to the next step.
+            </li>
+            <li style="margin-bottom: 8px">
+              The next step is to join the device to the domain.
+              <ul style="margin-left: 20px; margin-top: 4px">
+                <li>
+                  Go to Settings, choose the System tab, scroll down to About,
+                  choose Advanced System Settings, choose "Computer Name" tab
+                  and change the domain to "h2m.com". Then restart.
+                </li>
+              </ul>
+            </li>
+            <li style="margin-bottom: 8px">
+              When the device is connected to the Domain, log in as the "Stager"
+              user.
+            </li>
+            <li style="margin-bottom: 8px">
+              After logging in as the user, open Active Directory. Navigate to
+              the Computers OU. Move the computer object to its respective OU so
+              GPOs can start to be applied to the machine.
+            </li>
+            <li style="margin-bottom: 8px">
+              After the device is moved to the OU, open command prompt as the
+              user and run "gpupdate /force".
+            </li>
+            <li style="margin-bottom: 8px">
+              To establish a connection to Microsoft Intune, open the "Task
+              Scheduler" and navigate to "Task Scheduler Library > Microsoft >
+              Windows > Workplace Join"
+              <ul style="margin-left: 20px; margin-top: 4px">
+                <li>
+                  Right click the "Device-Sync" task and run it. This will
+                  trigger a link to Microsoft Intune.
+                </li>
+              </ul>
+            </li>
+            <li style="margin-bottom: 8px">
+              After the device has been successfully enrolled in Intune
+              (confirmed by the presence of the Intune Device Extension in the
+              Control Panel), please proceed with and complete the checklist.
+            </li>
+          </ol>
+        </div>
+
+        <div
+          style="
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+          "
+        >
+          <button class="btn" onclick="closeInstructionDetail()">Close</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       // ============================================================
       // SETUP INSTRUCTIONS
@@ -2523,7 +2852,7 @@
             { text: "Splashtop", note: "" },
             { text: "Newforma", note: "" },
             { text: "BST11", note: "" },
-            { text: "Cisco VPN - Remove from startup app", note: "" },
+            { text: "Cisco VPN", note: "Remove from startup apps" },
             { text: "Microsoft Edge", note: "" },
             { text: "CrowdStrike", note: "" },
             { text: "RingCentral", note: "" },
@@ -2550,30 +2879,28 @@
             { text: "Register Foxit/Bluebeam", note: "" },
             { text: "Install Outstanding apps from Helpdesk Ticket", note: "" },
             { text: "Set Taskbar Widgets Settings Off", note: "" },
-            { text: "Connect to H2M", note: "" },
-          ],
-        },
-        {
-          title: "Post Device Setup",
-          items: [
             {
               text: "Run IIS Crypto, Check off Best Practices, and Disable TLS 1.0 and 1.1",
               note: "File Location: \\\\app-server\\apps\\_Microsoft Patches & Service packs\\iis crypto",
             },
+          ],
+        },
+        {
+          title: "Post Setup Validation",
+          items: [
             { text: "Verify Outlook license and accounts", note: "" },
             { text: "Verify Bluebeam license", note: "" },
             { text: "Verify RingCentral", note: "" },
             { text: "Verify Foxit license", note: "" },
             { text: "Verify Teams functionality", note: "" },
-            { text: "Dock is fully functional", note: "" },
-            { text: "Monitor orientation for local setups", note: "" },
+            { text: "Verify Dock is fully functional", note: "" },
+            { text: "Verify Monitor orientation for local setups", note: "" },
             { text: "Verify all peripherals (Headphones)", note: "" },
           ],
         },
         {
-          title: "Computer List Status",
+          title: "Computer Groups & Status",
           items: [
-            { text: "Deployed", note: "" },
             {
               text: "Add Device to PatchMyPC-Application-Updates-Devices group in Entra",
               note: "",
@@ -2587,12 +2914,16 @@
               note: "",
             },
             {
-              text: "*For Structural Devices Only* Add Device to Softrack on mgnt-server",
+              text: "*For Non Autopiloted Devices Only* Add Device to Intune-Static-Everybody-Devices group in Entra",
               note: "",
             },
             {
-              text: "*For Non Autopiloted Devices Only* Add Device to Intune-Static-Everybody-Devices group in Entra",
+              text: "Ensure user is set as the primary user for the device in intune",
               note: "",
+            },
+            {
+              text: "Mark Deployed",
+              note: "In the Microsoft Computer List, please mark the user’s old device appropriately and set their new device status to Deployed. ",
             },
           ],
         },
@@ -2606,14 +2937,15 @@
       // ============================================================
       const DISCIPLINE_APPS = {
         Architecture: [
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
           {
-            text: "Placeholder Application",
+            text: "For Structural Users Add device to SofTrack on mgnt-server",
             note: "",
           },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
         ],
         "Civil-Survey": [
           {
@@ -2694,7 +3026,12 @@
         ],
         Legal: [{ text: "Placeholder Application", note: "" }],
         Facilities: [{ text: "Placeholder Application", note: "" }],
-        Executive: [],
+        Executive: [
+          {
+            text: "Placeholder",
+            note: "",
+          },
+        ],
       };
 
       // Returns the SECTIONS array tailored for a given hire (filters
@@ -2712,7 +3049,7 @@
         const disciplineItems = DISCIPLINE_APPS[dept];
         if (disciplineItems && disciplineItems.length) {
           base.push({
-            title: `${dept} - Discipline Applications`,
+            title: `${dept} - Discipline Specfic Instructions`,
             items: disciplineItems,
             discipline: dept,
           });
@@ -2739,7 +3076,7 @@
         if (disciplineItems && disciplineItems.length) {
           out.push({
             sec: {
-              title: `${dept} - Discipline Applications`,
+              title: `${dept} - Discipline Specific Instructions`,
               items: disciplineItems,
             },
             originalSi: `disc_${dept.replace(/[^A-Za-z0-9]+/g, "_")}`,
@@ -4575,6 +4912,40 @@
         renderSidebar();
         renderMain();
         closeDeleteModal();
+      }
+
+      // ============================================================
+      // Instructions Functions
+      // ============================================================
+      function openInstructionsModal() {
+        document.getElementById("instructions-modal").classList.add("open");
+      }
+
+      function closeInstructionsModal() {
+        document.getElementById("instructions-modal").classList.remove("open");
+        closeInstructionDetail();
+      }
+
+      function openInstructionDetail(type) {
+        document.getElementById("instructions-modal").classList.remove("open");
+        if (type === "autopilot") {
+          document
+            .getElementById("autopilot-instructions-modal")
+            .classList.add("open");
+        } else if (type === "non-autopilot") {
+          document
+            .getElementById("non-autopilot-instructions-modal")
+            .classList.add("open");
+        }
+      }
+
+      function closeInstructionDetail() {
+        document
+          .getElementById("autopilot-instructions-modal")
+          .classList.remove("open");
+        document
+          .getElementById("non-autopilot-instructions-modal")
+          .classList.remove("open");
       }
 
       // ============================================================
