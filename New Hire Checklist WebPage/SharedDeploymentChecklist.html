@@ -1421,8 +1421,8 @@
       /* Replacement / reassignment card */
       .replace-card {
         background: var(--surface-alt);
-        border: 1px solid var(--warning);
-        border-left: 4px solid var(--warning);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--border-light);
         border-radius: var(--radius-lg);
         padding: 14px 16px;
         margin-bottom: 16px;
@@ -1430,7 +1430,7 @@
       .replace-card h3 {
         font-size: 12px;
         font-weight: 700;
-        color: var(--warning);
+        color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-family: var(--mono);
@@ -1472,7 +1472,7 @@
       }
       .replace-card select:focus,
       .replace-card input:focus {
-        border-color: var(--warning);
+        border-color: var(--accent);
       }
 
       .file-input-hidden {
@@ -2585,93 +2585,93 @@
       const DISCIPLINE_APPS = {
         Architecture: [
           {
-            text: "Install Autodesk Revit (current year)",
-            note: "Autodesk Account / Network license",
+            text: "Placeholder Application",
+            note: "",
           },
-          { text: "Install AutoCAD Architecture", note: "" },
-          { text: "Install Enscape", note: "License via Enscape portal" },
-          { text: "Install SketchUp Pro", note: "" },
-          { text: "Install Bluebeam Revu (Architectural workflow)", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         "Civil-Survey": [
           {
-            text: "Install AutoCAD Civil 3D",
-            note: "Required for Civil/Survey",
+            text: "Placeholder Application",
+            note: "",
           },
-          { text: "Install Carlson Survey / Carlson Civil", note: "" },
+          { text: "Placeholder Application", note: "" },
           {
-            text: "Install Trimble Business Center",
-            note: "For survey data processing",
+            text: "Placeholder Application",
+            note: "",
           },
-          { text: "Install Bluebeam Revu", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         Electrical: [
-          { text: "Install AutoCAD Electrical", note: "" },
-          { text: "Install Revit MEP", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
           {
-            text: "Install SKM PowerTools",
-            note: "License from network license server",
+            text: "Placeholder Application",
+            note: "",
           },
-          { text: "Install ETAP (if applicable)", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         Water: [
-          { text: "Install Bentley WaterCAD / WaterGEMS", note: "" },
-          { text: "Install Bentley SewerCAD / SewerGEMS", note: "" },
-          { text: "Install AutoCAD", note: "" },
-          { text: "Install OpenFlows / StormCAD (if needed)", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         Environmental: [
           {
-            text: "Install ArcGIS Pro",
-            note: "License via ArcGIS Online / portal",
+            text: "Placeholder Application",
+            note: "",
           },
-          { text: "Install EQuIS", note: "For environmental data management" },
-          { text: "Install AutoCAD", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         Core: [
-          { text: "Install AutoCAD", note: "" },
-          { text: "Install Bluebeam Revu", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         "Inspector Field": [
-          { text: "Install ProjectWise Explorer", note: "" },
-          { text: "Install Bluebeam Revu", note: "For field markups" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
           {
-            text: "Install Field Inspection app(s)",
-            note: "Per project requirements",
+            text: "Placeholder Application",
+            note: "",
           },
-          { text: "Configure mobile hotspot / VPN access", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         "Information Technology": [
           {
-            text: "Install RSAT (Remote Server Administration Tools)",
+            text: "Placeholder Application",
             note: "",
           },
-          { text: "Install PowerShell 7 + ISE", note: "" },
-          { text: "Install PuTTY / WinSCP", note: "" },
-          { text: "Install Wireshark", note: "" },
-          { text: "Install Visual Studio Code", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         Finance: [
           {
-            text: "Install ERP / Accounting client (BST11, Deltek, etc.)",
+            text: "Placeholder Application",
             note: "",
           },
-          { text: "Configure Excel add-ins / Power Query", note: "" },
+          { text: "Placeholder Application", note: "" },
         ],
         "Human Resources": [
           {
-            text: "Install HRIS client / shortcut (ADP, Paylocity, etc.)",
+            text: "Placeholder Application",
             note: "",
           },
         ],
         Marketing: [
           {
-            text: "Install Adobe Creative Cloud (InDesign, Photoshop, Illustrator)",
-            note: "License via Adobe Admin Console",
+            text: "Placeholder Application",
+            note: "",
           },
         ],
-        Legal: [{ text: "Install document management client", note: "" }],
-        Facilities: [{ text: "Install AutoCAD LT", note: "" }],
+        Legal: [{ text: "Placeholder Application", note: "" }],
+        Facilities: [{ text: "Placeholder Application", note: "" }],
         Executive: [],
       };
 
@@ -4057,7 +4057,7 @@
             )
             .join("");
           replaceCardHtml = `<div class="replace-card">
-          <h3>⚠ Replacement / Reassignment Tracker</h3>
+          <h3>Replacement / Reassignment Tracker</h3>
           <div class="replace-grid">
             <div>
               <div class="rg-label">Old PC Name</div>
