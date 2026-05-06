@@ -3050,11 +3050,16 @@
         const dept = h.department || "";
         const disciplineItems = DISCIPLINE_APPS[dept];
         if (disciplineItems && disciplineItems.length) {
-          base.push({
+          const discSec = {
             title: `${dept} - Discipline Specfic Instructions`,
             items: disciplineItems,
             discipline: dept,
-          });
+          };
+          const insertAt = base.findIndex(
+            (s) => s.title === "Post Setup Validation",
+          );
+          if (insertAt === -1) base.push(discSec);
+          else base.splice(insertAt, 0, discSec);
         }
         return base;
       }
@@ -3076,13 +3081,18 @@
         const dept = h.department || "";
         const disciplineItems = DISCIPLINE_APPS[dept];
         if (disciplineItems && disciplineItems.length) {
-          out.push({
+          const discEntry = {
             sec: {
               title: `${dept} - Discipline Specific Instructions`,
               items: disciplineItems,
             },
             originalSi: `disc_${dept.replace(/[^A-Za-z0-9]+/g, "_")}`,
-          });
+          };
+          const insertAt = out.findIndex(
+            (e) => e.sec.title === "Post Setup Validation",
+          );
+          if (insertAt === -1) out.push(discEntry);
+          else out.splice(insertAt, 0, discEntry);
         }
         return out;
       }
@@ -4536,6 +4546,7 @@
           ready: 0,
           hold: 0,
           replacement: 0,
+          newDevice: 0,
         };
         all.forEach(({ h }) => {
           if (h.status === "On Hold") counts.hold++;
@@ -4545,6 +4556,7 @@
           else counts.inprogress++;
           if (h.deviceType === "Replacement" || h.deviceType === "Redeployment")
             counts.replacement++;
+          if (h.deviceType === "New") counts.newDevice++;
         });
 
         // Build technician options for filter
@@ -4586,6 +4598,8 @@
               return h.status === "Deployed";
             case "hold":
               return h.status === "On Hold";
+            case "new":
+              return h.deviceType === "New";
             case "replacement":
               return (
                 h.deviceType === "Replacement" ||
@@ -4637,7 +4651,7 @@
         <button type="button" class="${tileCls("active")}" onclick="setTrackerQuick('active')" title="Show non-completed deployments"><div class="num">${counts.inprogress}</div><div class="lbl">In Progress</div></button>
         <button type="button" class="${tileCls("ready")}" onclick="setTrackerQuick('ready')" title="Show Ready for Deployment only"><div class="num">${counts.ready}</div><div class="lbl">Ready</div></button>
         <button type="button" class="${tileCls("deployed")}" onclick="setTrackerQuick('deployed')" title="Show Deployed only"><div class="num">${counts.deployed}</div><div class="lbl">Deployed</div></button>
-        <button type="button" class="${tileCls("hold")}" onclick="setTrackerQuick('hold')" title="Show On Hold only"><div class="num">${counts.hold}</div><div class="lbl">On Hold</div></button>
+        <button type="button" class="${tileCls("new")}" onclick="setTrackerQuick('new')" title="Show New devices only"><div class="num">${counts.newDevice}</div><div class="lbl">New</div></button>
         <button type="button" class="${tileCls("replacement")}" onclick="setTrackerQuick('replacement')" title="Show Replacement devices only"><div class="num">${counts.replacement}</div><div class="lbl">Redeploys</div></button>
       </div>`;
 
