@@ -7,9 +7,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://alcdn.msauth.net/browser/2.30.0/ms-browser-client-4.4.1.js"></script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap"
     />
+    <link rel="icon" type="image/png" href="h2m.jpg" />
+
     <style>
       :root {
         /* Base backgrounds (slightly warmed to match palette) */
@@ -4318,7 +4320,9 @@
           visibleEntries.reduce((a, { sec }) => a + sec.items.length, 0) || 1;
         const rawDone = getChecked(h);
         const done = h.forceComplete ? totalItems : rawDone;
-        const pct = h.forceComplete ? 100 : Math.round((done / totalItems) * 100);
+        const pct = h.forceComplete
+          ? 100
+          : Math.round((done / totalItems) * 100);
         const isComplete = done === totalItems || h.forceComplete;
 
         const sectionPills = visibleEntries
