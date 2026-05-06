@@ -4313,11 +4313,12 @@
         }
 
         const h = db[activeId];
-        const done = getChecked(h);
         const visibleEntries = effectiveSectionsWithKeys(h);
         const totalItems =
           visibleEntries.reduce((a, { sec }) => a + sec.items.length, 0) || 1;
-        const pct = Math.round((done / totalItems) * 100);
+        const rawDone = getChecked(h);
+        const done = h.forceComplete ? totalItems : rawDone;
+        const pct = h.forceComplete ? 100 : Math.round((done / totalItems) * 100);
         const isComplete = done === totalItems || h.forceComplete;
 
         const sectionPills = visibleEntries
@@ -4325,7 +4326,8 @@
             const secDone = sec.items.filter(
               (_, ii) => h.checks?.[`${originalSi}_${ii}`],
             ).length;
-            return `<span class="phase-pill${secDone === sec.items.length ? " done" : ""}">${esc(sec.title)}</span>`;
+            const pillDone = h.forceComplete || secDone === sec.items.length;
+            return `<span class="phase-pill${pillDone ? " done" : ""}">${esc(sec.title)}</span>`;
           })
           .join("");
 
