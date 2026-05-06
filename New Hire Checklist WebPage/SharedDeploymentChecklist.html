@@ -2175,6 +2175,7 @@
           <select id="m-tech">
             <option value="">— Select Technician —</option>
             <option value="Dom">Dom</option>
+            <option value="Steve">Steve</option>
             <option value="Jack">Jack</option>
             <option value="Pat">Pat</option>
             <option value="Ricky">Ricky</option>
@@ -2939,11 +2940,14 @@
       // ============================================================
       const DISCIPLINE_APPS = {
         Architecture: [
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
+          { text: "Revit 23", note: "" },
+          { text: "Revit 25", note: "" },
+          { text: "Autocad 25", note: "" },
+          { text: "Unifi", note: "" },
+          {
+            text: "Reset 2025",
+            note: "Run Reset 2025 settings after h2m Autodesk customizations are installed- Location: C:\\\_H2MSTDS\\\_Common\\\Utilities",
+          },
           {
             text: "For Structural Users Add device to SofTrack on mgnt-server",
             note: "",
@@ -4039,7 +4043,7 @@
         if (sortSel) sortSel.value = sidebarSort;
         if (techSel) {
           // Rebuild tech options to include any free-text legacy techs in db.
-          const TECHS = ["Dom", "Jack", "Pat", "Ricky", "Tom", "Shav"];
+          const TECHS = ["Dom", "Steve", "Jack", "Pat", "Ricky", "Tom", "Shav"];
           const extra = new Set();
           Object.values(db).forEach((h) => {
             if (h.deleted) return;
@@ -4329,7 +4333,9 @@
         const totalItems =
           visibleEntries.reduce((a, { sec }) => a + sec.items.length, 0) || 1;
         const rawDone = getChecked(h);
-        const done = h.forceComplete ? totalItems : rawDone;
+        // Force Complete affects only the visual/percentage state, not the
+        // actual task completion count shown to the user.
+        const done = rawDone;
         const pct = h.forceComplete
           ? 100
           : Math.round((done / totalItems) * 100);
@@ -4473,7 +4479,15 @@
           .join("");
 
         const currentTech = h.technician || "";
-        const techList = ["Dom", "Jack", "Pat", "Ricky", "Tom", "Shav"];
+        const techList = [
+          "Dom",
+          "Steve",
+          "Jack",
+          "Pat",
+          "Ricky",
+          "Tom",
+          "Shav",
+        ];
         const techOptions =
           `<option value=""${currentTech === "" ? " selected" : ""}>\u2014 Select \u2014</option>` +
           techList
@@ -4677,7 +4691,9 @@
             .map(({ id, h }) => {
               const t = getTotal(h) || 1;
               const d = getChecked(h);
-              const pct = Math.round((d / t) * 100);
+              // Force Complete only affects the displayed percentage/bar,
+              // not the underlying task completion count.
+              const pct = h.forceComplete ? 100 : Math.round((d / t) * 100);
               const status = h.status || "Pending Setup";
               const isActive = id === activeId ? " active-row" : "";
               const techDisplay = h.technician
