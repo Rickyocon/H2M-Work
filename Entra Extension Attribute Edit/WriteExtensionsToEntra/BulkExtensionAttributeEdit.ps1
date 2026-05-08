@@ -17,10 +17,11 @@
 
 
 # =============================
-# STARTUP
+# STARTUP / BANNER
 # =============================
+Write-Host ""
 Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host "AD → Entra Device Attribute Sync" -ForegroundColor Cyan
+Write-Host "AD → Entra Device extensionAttribute1 Sync" -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -38,7 +39,7 @@ Write-Host "Loading modules..." -ForegroundColor Cyan
 Import-Module ActiveDirectory -ErrorAction Stop
 Import-Module Microsoft.Graph.DeviceManagement -ErrorAction Stop
 Import-Module Microsoft.Graph.Identity.DirectoryManagement -ErrorAction Stop
-Write-Host "Modules loaded successfully." -ForegroundColor Green
+Write-Host "Modules loaded." -ForegroundColor Green
 Write-Host ""
 
 # =============================
@@ -58,8 +59,7 @@ switch ($mode) {
     "2" {
         $DryRun = $false
         Write-Host "`nMODE: REAL RUN" -ForegroundColor Red
-
-        $confirm = Read-Host "Are you sure you want to WRITE changes to Entra? (YES to continue)"
+        $confirm = Read-Host "Type YES to confirm Entra writes"
         if ($confirm -ne "YES") {
             Write-Host "Aborted by user." -ForegroundColor Yellow
             return
@@ -99,7 +99,7 @@ $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $CsvPath   = Join-Path $env:USERPROFILE "Downloads\Entra_ExtAttr_Sync_$Timestamp.csv"
 
 # =============================
-# FUNCTIONS
+# FUNCTION: DETECT OFFICE FROM DN
 # =============================
 function Get-OfficeFromDn {
     param([string]$DN)
@@ -110,6 +110,7 @@ function Get-OfficeFromDn {
 
     if (-not $ous) { return $null }
 
+    # Melville has sub-OUs
     if ($ous.Count -ge 2 -and $ous[1] -eq 'Melville') {
         return 'Melville'
     }
@@ -132,6 +133,7 @@ foreach ($office in $OfficeTagMap.Keys | Sort-Object) {
 }
 
 $selection = Read-Host "`nEnter number"
+
 if (-not $menu.ContainsKey([int]$selection)) {
     throw "Invalid selection."
 }
@@ -140,8 +142,8 @@ $SelectedOffice = $menu[[int]$selection]
 $TargetTag      = $OfficeTagMap[$SelectedOffice]
 
 Write-Host ""
-Write-Host "Office selected : $SelectedOffice" -ForegroundColor Green
-Write-Host "Target Entra tag: $TargetTag" -ForegroundColor Green
+Write-Host "Selected office : $SelectedOffice" -ForegroundColor Green
+Write-Host "Target tag      : $TargetTag" -ForegroundColor Green
 Write-Host ""
 
 # =============================
@@ -155,14 +157,14 @@ $adComputers = Get-ADComputer `
     -Properties DistinguishedName,ObjectGuid,Enabled |
     Where-Object { if ($OnlyEnabled) { $_.Enabled } else { $true } }
 
-Write-Host "Found $($adComputers.Count) AD computers total." -ForegroundColor Green
+Write-Host "Total AD computers found: $($adComputers.Count)" -ForegroundColor Green
 Write-Host ""
 
 # =============================
 # PROCESS DEVICES
 # =============================
 $results = @()
-$deviceIndex = 1
+$counter = 1
 
 foreach ($c in $adComputers) {
 
@@ -170,9 +172,11 @@ foreach ($c in $adComputers) {
     if ($office -ne $SelectedOffice) { continue }
 
     Write-Host "------------------------------------------------" -ForegroundColor DarkGray
-    Write-Host "[$deviceIndex] Processing $($c.Name)" -ForegroundColor Cyan
+    Write-Host "[$counter] Processing $($c.Name)" -ForegroundColor Cyan
+    Write-Host "Detected office: $office"
 
-    Write-Host "Looking up Intune device..." -ForegroundColor Yellow
+    Write-Host "Looking up Intune managed device..." -ForegroundColor Yellow
+
     $managed = Get-MgDeviceManagementManagedDevice `
         -Filter "deviceName eq '$($c.Name)'" `
         -Top 5 |
@@ -180,45 +184,70 @@ foreach ($c in $adComputers) {
         Select-Object -First 1
 
     if (-not $managed -or -not $managed.azureADDeviceId) {
-        Write-Host "No Intune device found. Skipping." -ForegroundColor DarkYellow
-        $deviceIndex++
+        Write-Host "SKIP: No Intune device found." -ForegroundColor DarkYellow
+        $counter++
         continue
     }
 
-    $entra = Get-MgDevice -Filter "deviceId eq '$($managed.azureADDeviceId)'" -Top 1
-    $full  = Get-MgDevice -DeviceId $entra.Id -Property "extensionAttributes"
-    $current = $full.extensionAttributes.$AttrName
+    Write-Host "Resolved azureADDeviceId: $($managed.azureADDeviceId)"
 
-    Write-Host "Current Entra value: $current"
-    Write-Host "Expected value     : $TargetTag"
+    # =============================
+    # IMPORTANT: FORCE GRAPH TO RETURN extensionAttributes
+    # =============================
+    Write-Host "Reading Entra device attributes..." -ForegroundColor Yellow
+
+    $entra = Get-MgDevice `
+        -Filter "deviceId eq '$($managed.azureADDeviceId)'" `
+        -ConsistencyLevel eventual `
+        -Property "id,displayName,extensionAttributes" `
+        -Top 1
+
+    if (-not $entra) {
+        Write-Host "SKIP: Entra device not found." -ForegroundColor DarkYellow
+        $counter++
+        continue
+    }
+
+    $current = $entra.extensionAttributes.extensionAttribute1
+
+    Write-Host "Current Entra value : $current"
+    Write-Host "Expected value      : $TargetTag"
 
     if ($current -eq $TargetTag) {
         Write-Host "NO CHANGE REQUIRED" -ForegroundColor Green
         $results += [pscustomobject]@{
-            Device=$c.Name; Status="NOCHANGE"; Current=$current; Target=$TargetTag
+            Device  = $c.Name
+            Status  = "NOCHANGE"
+            Current = $current
+            Target  = $TargetTag
         }
-        $deviceIndex++
+        $counter++
         continue
     }
 
     if ($DryRun) {
-        Write-Host "DRY RUN: Would update Entra value." -ForegroundColor Yellow
+        Write-Host "DRY RUN: Would update Entra attribute." -ForegroundColor Yellow
         $status = "WOULD-UPDATE"
     }
     else {
-        Write-Host "Updating Entra..." -ForegroundColor Red
+        Write-Host "Updating Entra attribute..." -ForegroundColor Red
         Update-MgDevice -DeviceId $entra.Id -BodyParameter @{
-            extensionAttributes = @{ extensionAttribute1 = $TargetTag }
+            extensionAttributes = @{
+                extensionAttribute1 = $TargetTag
+            }
         }
         Write-Host "Update successful." -ForegroundColor Green
         $status = "UPDATED"
     }
 
     $results += [pscustomobject]@{
-        Device=$c.Name; Status=$status; Current=$current; Target=$TargetTag
+        Device  = $c.Name
+        Status  = $status
+        Current = $current
+        Target  = $TargetTag
     }
 
-    $deviceIndex++
+    $counter++
 }
 
 # =============================
@@ -229,12 +258,20 @@ Write-Host "==============================================" -ForegroundColor Cya
 Write-Host "SUMMARY" -ForegroundColor Cyan
 Write-Host "==============================================" -ForegroundColor Cyan
 
-$results | Group-Object Status | Format-Table Count, Name -AutoSize
+$results | Group-Object Status | Sort-Object Name | Format-Table Count, Name -AutoSize
+
 $results | Export-Csv -Path $CsvPath -NoTypeInformation -Encoding UTF8 -Force
 
 Write-Host ""
 Write-Host "CSV exported to:" -ForegroundColor Green
 Write-Host $CsvPath
-
 Write-Host ""
-Write-Host "Script complete." -ForegroundColor Cyan
+
+if ($DryRun) {
+    Write-Host "Dry run complete — no Entra changes were made." -ForegroundColor Yellow
+}
+else {
+    Write-Host "Entra updates completed successfully." -ForegroundColor Green
+}
+
+Write-Host "==============================================" -ForegroundColor Cyan
