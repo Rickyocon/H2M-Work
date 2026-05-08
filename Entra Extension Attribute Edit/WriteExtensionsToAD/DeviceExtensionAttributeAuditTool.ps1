@@ -1,5 +1,8 @@
 Import-Module ActiveDirectory
 
+#you must run this in your terminal first : Connect-MgGraph -Scopes Device.ReadWrite.All,DeviceManagementManagedDevices.Read.All
+
+
 # -----------------------------
 # OFFICE DEFINITIONS
 # -----------------------------

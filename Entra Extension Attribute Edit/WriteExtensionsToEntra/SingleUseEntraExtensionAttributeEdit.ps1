@@ -15,6 +15,10 @@ USAGE
 Run the script in PowerShell 7 (pwsh) and follow the prompts.
 #>
 
+#NOTE: You must connect to Microsoft Grpaph First
+# you must run this in your terminal first : Connect-MgGraph -Scopes Device.ReadWrite.All,DeviceManagementManagedDevices.Read.All
+# youll be promted to sign in, use your admin account
+
 # -------------------------
 # PROMPT FOR INPUT
 # -------------------------
