@@ -1,270 +1,240 @@
-<#
-PRODUCTION (PowerShell 7): Write Entra device extensionAttribute1 using OU->Tag mapping,
-and guarantee we update the correct Entra device when duplicates exist by targeting the Intune-managed device.
+#Logic:
+#1) AD computer -> OU name (first OU=...)
+#2) OU name -> Tag (Common/Spares/etc.)
+#3) Find Intune managed device by deviceName
+#4) Use managedDevice.azureADDeviceId to find the Entra device object
+#5) Update extensionAttributes.extensionAttribute1
 
-Logic:
-1) AD computer -> OU name (first OU=...)
-2) OU name -> Tag (Common/Spares/etc.)
-3) Find Intune managed device by deviceName
-4) Use managedDevice.azureADDeviceId to find the Entra device object
-5) Update extensionAttributes.extensionAttribute1
-
-Scopes needed:
-- Device.ReadWrite.All
-- DeviceManagementManagedDevices.Read.All
-#>
-
-
+#Scopes needed:
+#- Device.ReadWrite.All
+#- DeviceManagementManagedDevices.Read.All
 
 # -------------------------
 # Require PowerShell 7+
-# !!!!!!!!!!!you must run this in your terminal first : Connect-MgGraph -Scopes Device.ReadWrite.All,DeviceManagementManagedDevices.Read.All
+# you must run this in your terminal first : Connect-MgGraph -Scopes Device.ReadWrite.All,DeviceManagementManagedDevices.Read.All
 # youll be promted to sign in, use your admin account
 # -------------------------
+
+
+# =============================
+# STARTUP
+# =============================
+Write-Host "==============================================" -ForegroundColor Cyan
+Write-Host "AD → Entra Device Attribute Sync" -ForegroundColor Cyan
+Write-Host "==============================================" -ForegroundColor Cyan
+Write-Host ""
+
+# =============================
+# REQUIRE POWERSHELL 7
+# =============================
 if ($PSVersionTable.PSEdition -ne 'Core' -or $PSVersionTable.PSVersion.Major -lt 7) {
     throw "Run this script in PowerShell 7 (pwsh)."
 }
 
-# -------------------------
-# CONFIG
-# -------------------------
-$SearchBaseOU   = "CHNAGE THIS TO YOUR TARGET OU"
-$OnlyEnabled    = $true
-$AttributeName  = "extensionAttribute1"
+# =============================
+# MODULES
+# =============================
+Write-Host "Loading modules..." -ForegroundColor Cyan
+Import-Module ActiveDirectory -ErrorAction Stop
+Import-Module Microsoft.Graph.DeviceManagement -ErrorAction Stop
+Import-Module Microsoft.Graph.Identity.DirectoryManagement -ErrorAction Stop
+Write-Host "Modules loaded successfully." -ForegroundColor Green
+Write-Host ""
 
-$OuToTagMap = @{
-    "Dept 1100 Exec." = "Melville"
-    "Dept 1200 HR" = "Melville"
-    "Dept 1300 Marketing" = "Melville"
-    "Dept 1400 Finance" = "Melville"
-    "Dept 1500 IT" = "Melville"
-    "Dept 1600 Legal" = "Melville"
-    "Dept 1700 Facilities" = "Melville"
-    "Dept 1800 Core" = "Melville"
-    "Dept 2000 Electrical" = "Melville"
-    "Dept 3000 Arch" = "Melville"
-    "Dept 4000 Water" = "Melville"
-    "Dept 6000 Environmental" = "Melville"
-    "Dept 7000 Civil - Survey" = "Melville"
-    "Dept 8000 Inspector Field" = "Melville"
+# =============================
+# RUN MODE SELECTION
+# =============================
+Write-Host "Select run mode:" -ForegroundColor Cyan
+Write-Host "[1] Dry Run (no Entra changes)"
+Write-Host "[2] Real Run (write changes to Entra)"
+
+$mode = Read-Host "Enter number"
+
+switch ($mode) {
+    "1" {
+        $DryRun = $true
+        Write-Host "`nMODE: DRY RUN" -ForegroundColor Yellow
+    }
+    "2" {
+        $DryRun = $false
+        Write-Host "`nMODE: REAL RUN" -ForegroundColor Red
+
+        $confirm = Read-Host "Are you sure you want to WRITE changes to Entra? (YES to continue)"
+        if ($confirm -ne "YES") {
+            Write-Host "Aborted by user." -ForegroundColor Yellow
+            return
+        }
+    }
+    default {
+        throw "Invalid selection."
+    }
 }
 
-# If Intune record isn't found, do you want fallback to Hybrid joined object?
-$FallbackToHybridIfNoIntune = $false
+Write-Host ""
+
+# =============================
+# CONFIG
+# =============================
+$SearchBaseOU = "OU=Workstations,OU=Entra Synced,DC=h2m,DC=com"
+$OnlyEnabled = $true
+$AttrName    = "extensionAttribute1"
+
+$OfficeTagMap = @{
+    "Boca Raton"        = "Boca"
+    "Central Jersey"    = "Central Jersey"
+    "Connecticut"       = "Connecticut"
+    "Interns"           = "Intern"
+    "Melville"          = "Melville"
+    "NYC"               = "NYC"
+    "Parsippany"        = "Parsippany"
+    "Remote"            = "Remote"
+    "Suffern"           = "Suffern"
+    "Troy"              = "Troy"
+    "Westchester"       = "Westchester"
+    "_Common Machines"  = "Common"
+    "_Spares"           = "Spare"
+}
 
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$CsvPath   = Join-Path $env:USERPROFILE "Downloads\EntraDeviceExtAttr_Write_$Timestamp.csv"
+$CsvPath   = Join-Path $env:USERPROFILE "Downloads\Entra_ExtAttr_Sync_$Timestamp.csv"
 
-# -------------------------
+# =============================
 # FUNCTIONS
-# -------------------------
-function Get-FirstOuFromDn {
-    param([Parameter(Mandatory)][string]$DN)
-    $m = [regex]::Match($DN, "OU=([^,]+)")
-    if ($m.Success) { return $m.Groups[1].Value }
-    return $null
+# =============================
+function Get-OfficeFromDn {
+    param([string]$DN)
+
+    $ous = ($DN -split ',') |
+        Where-Object { $_ -like 'OU=*' } |
+        ForEach-Object { $_ -replace '^OU=' }
+
+    if (-not $ous) { return $null }
+
+    if ($ous.Count -ge 2 -and $ous[1] -eq 'Melville') {
+        return 'Melville'
+    }
+
+    return $ous[0]
 }
 
-function Get-TagForOu {
-    param([Parameter(Mandatory)][string]$OuName)
-    if ($OuToTagMap.ContainsKey($OuName)) { return $OuToTagMap[$OuName] }
-    return $null
+# =============================
+# OFFICE SELECTION
+# =============================
+Write-Host "Select office to process:" -ForegroundColor Cyan
+Write-Host ""
+
+$menu = @{}
+$i = 1
+foreach ($office in $OfficeTagMap.Keys | Sort-Object) {
+    Write-Host "[$i] $office"
+    $menu[$i] = $office
+    $i++
 }
 
-# -------------------------
-# MODULES
-# -------------------------
-Import-Module ActiveDirectory -ErrorAction Stop
-Import-Module Microsoft.Graph -ErrorAction Stop
+$selection = Read-Host "`nEnter number"
+if (-not $menu.ContainsKey([int]$selection)) {
+    throw "Invalid selection."
+}
 
-# -------------------------
-# GRAPH AUTH (WRITE + Intune read)
-# -------------------------
-Connect-MgGraph -Scopes @(
-    "Device.ReadWrite.All",
-    "DeviceManagementManagedDevices.Read.All"
-) | Out-Null
+$SelectedOffice = $menu[[int]$selection]
+$TargetTag      = $OfficeTagMap[$SelectedOffice]
 
-# -------------------------
+Write-Host ""
+Write-Host "Office selected : $SelectedOffice" -ForegroundColor Green
+Write-Host "Target Entra tag: $TargetTag" -ForegroundColor Green
+Write-Host ""
+
+# =============================
 # GET AD COMPUTERS
-# -------------------------
-Write-Host "`nReading AD computers from:`n$SearchBaseOU`n"
+# =============================
+Write-Host "Querying Active Directory..." -ForegroundColor Cyan
 
-$adComputers = Get-ADComputer -SearchBase $SearchBaseOU -Filter * -Properties ObjectGuid, DistinguishedName, Enabled |
+$adComputers = Get-ADComputer `
+    -SearchBase $SearchBaseOU `
+    -Filter * `
+    -Properties DistinguishedName,ObjectGuid,Enabled |
     Where-Object { if ($OnlyEnabled) { $_.Enabled } else { $true } }
 
-Write-Host "Found $($adComputers.Count) AD computers.`n"
+Write-Host "Found $($adComputers.Count) AD computers total." -ForegroundColor Green
+Write-Host ""
 
-# -------------------------
-# PROCESS + UPDATE
-# -------------------------
-$results = foreach ($c in $adComputers) {
+# =============================
+# PROCESS DEVICES
+# =============================
+$results = @()
+$deviceIndex = 1
 
-    Write-Host "Processing $($c.Name)..." -ForegroundColor DarkGray
+foreach ($c in $adComputers) {
 
-    $ouName = Get-FirstOuFromDn -DN $c.DistinguishedName
-    $tag    = if ($ouName) { Get-TagForOu -OuName $ouName } else { $null }
+    $office = Get-OfficeFromDn $c.DistinguishedName
+    if ($office -ne $SelectedOffice) { continue }
 
-    if (-not $ouName) {
-        [pscustomobject]@{
-            ADComputer    = $c.Name
-            SourceOU      = $null
-            TargetType    = $null
-            TargetDevice  = $null
-            TargetDeviceId= $null
-            CurrentValue  = $null
-            ProposedValue = $null
-            Status        = "SKIP: no OU parsed"
-            Error         = $null
-        }
+    Write-Host "------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host "[$deviceIndex] Processing $($c.Name)" -ForegroundColor Cyan
+
+    Write-Host "Looking up Intune device..." -ForegroundColor Yellow
+    $managed = Get-MgDeviceManagementManagedDevice `
+        -Filter "deviceName eq '$($c.Name)'" `
+        -Top 5 |
+        Sort-Object lastSyncDateTime -Descending |
+        Select-Object -First 1
+
+    if (-not $managed -or -not $managed.azureADDeviceId) {
+        Write-Host "No Intune device found. Skipping." -ForegroundColor DarkYellow
+        $deviceIndex++
         continue
     }
 
-    if (-not $tag) {
-        [pscustomobject]@{
-            ADComputer    = $c.Name
-            SourceOU      = $ouName
-            TargetType    = $null
-            TargetDevice  = $null
-            TargetDeviceId= $null
-            CurrentValue  = $null
-            ProposedValue = $null
-            Status        = "SKIP: OU not mapped"
-            Error         = $null
+    $entra = Get-MgDevice -Filter "deviceId eq '$($managed.azureADDeviceId)'" -Top 1
+    $full  = Get-MgDevice -DeviceId $entra.Id -Property "extensionAttributes"
+    $current = $full.extensionAttributes.$AttrName
+
+    Write-Host "Current Entra value: $current"
+    Write-Host "Expected value     : $TargetTag"
+
+    if ($current -eq $TargetTag) {
+        Write-Host "NO CHANGE REQUIRED" -ForegroundColor Green
+        $results += [pscustomobject]@{
+            Device=$c.Name; Status="NOCHANGE"; Current=$current; Target=$TargetTag
         }
+        $deviceIndex++
         continue
     }
 
-    # ---------- Prefer Intune-managed device to avoid Entra duplicates ----------
-    $managed = $null
-    try {
-        # Filter is supported, but some tenants can be picky; keep it simple.
-        # If you have many devices with same name, you can add additional checks (see notes below).
-        $managed = Get-MgDeviceManagementManagedDevice -Filter "deviceName eq '$($c.Name)'" -All |
-            Sort-Object lastSyncDateTime -Descending |
-            Select-Object -First 1
-    } catch {
-        $managed = $null
+    if ($DryRun) {
+        Write-Host "DRY RUN: Would update Entra value." -ForegroundColor Yellow
+        $status = "WOULD-UPDATE"
     }
-
-    $entraTarget = $null
-    $targetType  = $null
-
-    if ($managed -and $managed.azureADDeviceId) {
-        $targetType = "IntuneManaged"
-        $entraTarget = Get-MgDevice -Filter "deviceId eq '$($managed.azureADDeviceId)'" -All |
-            Select-Object -First 1
-    }
-
-    # Optional fallback: Hybrid joined object (ServerAd) via AD objectGuid -> deviceId
-    if (-not $entraTarget -and $FallbackToHybridIfNoIntune) {
-        $targetType = "HybridFallback"
-        $entraTarget = Get-MgDevice -Filter "deviceId eq '$($c.ObjectGuid.Guid)'" -All |
-            Where-Object { $_.trustType -eq "ServerAd" } |
-            Select-Object -First 1
-    }
-
-    if (-not $entraTarget) {
-        [pscustomobject]@{
-            ADComputer    = $c.Name
-            SourceOU      = $ouName
-            TargetType    = $targetType
-            TargetDevice  = $null
-            TargetDeviceId= $null
-            CurrentValue  = $null
-            ProposedValue = $tag
-            Status        = "MISSING: no target Entra device"
-            Error         = $null
+    else {
+        Write-Host "Updating Entra..." -ForegroundColor Red
+        Update-MgDevice -DeviceId $entra.Id -BodyParameter @{
+            extensionAttributes = @{ extensionAttribute1 = $TargetTag }
         }
-        continue
+        Write-Host "Update successful." -ForegroundColor Green
+        $status = "UPDATED"
     }
 
-    # Read current extension attribute
-    $full = $null
-    $currentValue = $null
-    try {
-        $full = Get-MgDevice -DeviceId $entraTarget.Id -Property "displayName,deviceId,trustType,extensionAttributes"
-        $currentValue = $full.extensionAttributes.$AttributeName
-    } catch {
-        [pscustomobject]@{
-            ADComputer    = $c.Name
-            SourceOU      = $ouName
-            TargetType    = $targetType
-            TargetDevice  = $entraTarget.DisplayName
-            TargetDeviceId= $entraTarget.DeviceId
-            CurrentValue  = $null
-            ProposedValue = $tag
-            Status        = "ERROR: read failed"
-            Error         = $_.Exception.Message
-        }
-        continue
+    $results += [pscustomobject]@{
+        Device=$c.Name; Status=$status; Current=$current; Target=$TargetTag
     }
 
-    if ($currentValue -eq $tag) {
-        [pscustomobject]@{
-            ADComputer    = $c.Name
-            SourceOU      = $ouName
-            TargetType    = $targetType
-            TargetDevice  = $full.displayName
-            TargetDeviceId= $full.deviceId
-            CurrentValue  = $currentValue
-            ProposedValue = $tag
-            Status        = "NOCHANGE"
-            Error         = $null
-        }
-        continue
-    }
-
-    # Update
-    $body = @{
-        extensionAttributes = @{
-            $AttributeName = $tag
-        }
-    }
-
-    try {
-        Update-MgDevice -DeviceId $entraTarget.Id -BodyParameter $body -ErrorAction Stop
-        [pscustomobject]@{
-            ADComputer    = $c.Name
-            SourceOU      = $ouName
-            TargetType    = $targetType
-            TargetDevice  = $full.displayName
-            TargetDeviceId= $full.deviceId
-            CurrentValue  = $currentValue
-            ProposedValue = $tag
-            Status        = "UPDATED"
-            Error         = $null
-        }
-    } catch {
-        [pscustomobject]@{
-            ADComputer    = $c.Name
-            SourceOU      = $ouName
-            TargetType    = $targetType
-            TargetDevice  = $full.displayName
-            TargetDeviceId= $full.deviceId
-            CurrentValue  = $currentValue
-            ProposedValue = $tag
-            Status        = "ERROR: update failed"
-            Error         = $_.Exception.Message
-        }
-    }
+    $deviceIndex++
 }
 
-# -------------------------
-# OUTPUT + LOG
-# -------------------------
-Write-Host "SUMMARY"
-$results | Group-Object Status | Sort-Object Name | Format-Table Count, Name -AutoSize
+# =============================
+# SUMMARY
+# =============================
+Write-Host ""
+Write-Host "==============================================" -ForegroundColor Cyan
+Write-Host "SUMMARY" -ForegroundColor Cyan
+Write-Host "==============================================" -ForegroundColor Cyan
 
-Write-Host "`nUPDATED (first 500)"
-$results | Where-Object Status -eq "UPDATED" | Select-Object -First 500 |
-    Format-Table ADComputer, TargetType, TargetDevice, CurrentValue, ProposedValue -AutoSize
-
-Write-Host "`nMISSING/ERROR (first 500)"
-$results | Where-Object { $_.Status -like "MISSING*" -or $_.Status -like "ERROR*" } | Select-Object -First 500 |
-    Format-Table ADComputer, TargetType, SourceOU, ProposedValue, Status, Error -AutoSize
-
+$results | Group-Object Status | Format-Table Count, Name -AutoSize
 $results | Export-Csv -Path $CsvPath -NoTypeInformation -Encoding UTF8 -Force
-Write-Host "`nCSV audit exported to:`n$CsvPath"
 
-Disconnect-MgGraph | Out-Null
+Write-Host ""
+Write-Host "CSV exported to:" -ForegroundColor Green
+Write-Host $CsvPath
+
+Write-Host ""
+Write-Host "Script complete." -ForegroundColor Cyan
