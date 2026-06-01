@@ -3920,20 +3920,43 @@
       }
 
       function getChecked(h) {
+        if (!h) return 0;
         let count = 0;
-        effectiveSectionsWithKeys(h).forEach(({ sec, originalSi }) => {
-          sec.items.forEach((_, ii) => {
-            if (h.checks?.[`${originalSi}_${ii}`]) count++;
+
+        // Count deployment checks if this is not a termination
+        if (h.deviceType !== "Termination") {
+          effectiveSectionsWithKeys(h).forEach(({ sec, originalSi }) => {
+            sec.items.forEach((_, ii) => {
+              if (h.checks?.[`${originalSi}_${ii}`]) count++;
+            });
           });
-        });
+        } else {
+          // Count termination checks with term_ prefix
+          TERMINATION_SECTIONS.forEach((sec, si) => {
+            sec.items.forEach((_, ii) => {
+              if (h.checks?.[`term_${si}_${ii}`]) count++;
+            });
+          });
+        }
         return count;
       }
 
       function getTotal(h) {
-        return effectiveSectionsWithKeys(h).reduce(
-          (a, { sec }) => a + sec.items.length,
-          0,
-        );
+        if (!h) return 0;
+
+        // Count total items for deployment
+        if (h.deviceType !== "Termination") {
+          return effectiveSectionsWithKeys(h).reduce(
+            (a, { sec }) => a + sec.items.length,
+            0,
+          );
+        } else {
+          // Count total items for termination
+          return TERMINATION_SECTIONS.reduce(
+            (a, sec) => a + sec.items.length,
+            0,
+          );
+        }
       }
 
       // ============================================================
@@ -5167,7 +5190,30 @@
         const total = getTotal(h) || 0;
         const done = getChecked(h);
         const isComplete = h.forceComplete || (total > 0 && done === total);
-        const cur = h.status || "Pending Setup";
+        const cur =
+          h.status ||
+          (h.deviceType === "Termination"
+            ? "Termination In Progress"
+            : "Pending Setup");
+
+        // For terminations, handle status differently
+        if (h.deviceType === "Termination") {
+          if (
+            ["Termination In Progress", "Termination Complete"].includes(cur)
+          ) {
+            if (isComplete && cur !== "Termination Complete") {
+              h.status = "Termination Complete";
+              return true;
+            }
+            if (!isComplete && cur === "Termination Complete") {
+              h.status = "Termination In Progress";
+              return true;
+            }
+          }
+          return false;
+        }
+
+        // For non-terminations (deployments)
         if (["Deployed", "On Hold", "Returned"].includes(cur)) return false;
         if (isComplete && cur !== "Ready for Deployment") {
           h.status = "Ready for Deployment";
@@ -5593,6 +5639,20 @@
       // Modal Functions
       // ============================================================
       function openNewHireModal() {
+        const isTermination = currentView === "termination";
+        const modalTitle = document.querySelector(".modal h2");
+        if (modalTitle) {
+          modalTitle.textContent = isTermination
+            ? "New termination"
+            : "New laptop deployment";
+        }
+        const modalSubtitle = document.querySelector(".modal-subtitle");
+        if (modalSubtitle) {
+          modalSubtitle.textContent = isTermination
+            ? "Fill in employee and device information for termination"
+            : "Fill in employee and device information";
+        }
+
         [
           "m-name",
           "m-email",
@@ -5614,6 +5674,30 @@
           if (el.tagName === "INPUT") el.value = "";
           else el.selectedIndex = 0;
         });
+
+        // Hide fields for terminations
+        const empTypeWrapper =
+          document.getElementById("m-emp-type")?.parentElement;
+        const deviceTypeWrapper =
+          document.getElementById("m-device-type")?.parentElement;
+        const statusWrapper =
+          document.getElementById("m-status")?.parentElement;
+
+        if (empTypeWrapper)
+          empTypeWrapper.style.display = isTermination ? "none" : "flex";
+        if (deviceTypeWrapper)
+          deviceTypeWrapper.style.display = isTermination ? "none" : "flex";
+        if (statusWrapper)
+          statusWrapper.style.display = isTermination ? "none" : "flex";
+
+        // For terminations, set device type to Termination and status to Termination In Progress
+        if (isTermination) {
+          const deviceTypeField = document.getElementById("m-device-type");
+          if (deviceTypeField) deviceTypeField.value = "Termination";
+          const statusField = document.getElementById("m-status");
+          if (statusField) statusField.value = "Termination In Progress";
+        }
+
         // Default technician to signed-in Entra user when available
         const techField = document.getElementById("m-tech");
         if (techField && msalAccount) {
@@ -5649,19 +5733,26 @@
         }
 
         const id = "h" + Date.now() + Math.random().toString(36).slice(2, 6);
-        const deviceType = document
-          .getElementById("m-device-type")
-          .value.trim();
+        const isTermination = currentView === "termination";
+        const deviceType = isTermination
+          ? "Termination"
+          : document.getElementById("m-device-type").value.trim();
+        const defaultStatus = isTermination
+          ? "Termination In Progress"
+          : "Pending Setup";
+
         db[id] = {
           name,
           email: document.getElementById("m-email").value.trim(),
           department: document.getElementById("m-dept").value.trim(),
           office: document.getElementById("m-office").value.trim(),
           pcName: document.getElementById("m-pc-name").value.trim(),
-          empType: document.getElementById("m-emp-type").value.trim(),
-          start: document.getElementById("m-start").value,
+          empType: isTermination
+            ? ""
+            : document.getElementById("m-emp-type").value.trim(),
+          start: isTermination ? "" : document.getElementById("m-start").value,
           deviceType,
-          status: document.getElementById("m-status").value || "Pending Setup",
+          status: document.getElementById("m-status").value || defaultStatus,
           technician:
             document.getElementById("m-tech")?.value.trim() ||
             (msalAccount && (msalAccount.name || msalAccount.username)) ||
