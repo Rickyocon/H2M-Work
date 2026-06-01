@@ -2114,6 +2114,7 @@
             <option value="Loaner">Loaner</option>
             <option value="Rendering">Rendering Workstation</option>
             <option value="Wipe/Reset">Wipe/Reset</option>
+            <option value="Termination">Termination</option>
           </select>
         </div>
 
@@ -3040,6 +3041,88 @@
         ],
       };
 
+      // ============================================================
+      // Termination Checklist Sections
+      // ============================================================
+      const TERMINATION_SECTIONS = [
+        {
+          title: "Password",
+          items: [{ text: "Change user password", note: "" }],
+        },
+        {
+          title: "Export to Synology",
+          items: [
+            { text: "Export Terminated User's PST", note: "" },
+            { text: "Export Terminated User's OneDrive", note: "" },
+          ],
+        },
+        {
+          title: "License Removal",
+          items: [
+            { text: "Bluebeam", note: "" },
+            { text: "Speclink", note: "" },
+            { text: "Newforma", note: "" },
+            { text: "Adobe", note: "" },
+            { text: "Webex", note: "" },
+          ],
+        },
+        {
+          title: "AD",
+          items: [
+            { text: "Remove Computer Object", note: "" },
+            { text: "Remove User Object", note: "" },
+          ],
+        },
+        {
+          title: "Inventory",
+          items: [
+            {
+              text: "Change status of machine in PC List to 'Standby'",
+              note: "",
+            },
+            {
+              text: "Melville or Parsippany Only: Computer, Ipad, Bag + Charger returned",
+              note: "",
+            },
+          ],
+        },
+        {
+          title: "Phone",
+          items: [
+            {
+              text: "Delete user from Assigned User column in Direct Number List",
+              note: "",
+            },
+          ],
+        },
+        {
+          title: "Remote Offices",
+          items: [
+            {
+              text: "Change Containment status of Machine to 'Pending Containment' via Host Management in CrowdStrike",
+              note: "",
+            },
+            {
+              text: "Send email to office admin to return Computer, Charger, Ipad+ bag to Melville IT",
+              note: "",
+            },
+          ],
+        },
+        {
+          title: "Office Admin",
+          items: [
+            { text: "Troy: Trish Bianchini", note: "" },
+            { text: "Suffern: Joanne Strassburg", note: "" },
+            { text: "Westchester: Marie Ruocco", note: "" },
+            { text: "Central NJ: Anne McKenna", note: "" },
+            { text: "NYC: Lisa Pool", note: "" },
+            { text: "Windsor: Greg Levasseur", note: "" },
+            { text: "Boca: Greg Cellamare", note: "" },
+            { text: "CC the IT group to the email", note: "" },
+          ],
+        },
+      ];
+
       // Returns the SECTIONS array tailored for a given hire (filters
       // "New Account Setup" for existing employees, appends a discipline
       // section when applicable).
@@ -3108,7 +3191,7 @@
       let db = {};
       let activeId = null;
       let deleteTargetId = null;
-      let currentView = "checklist"; // 'checklist' | 'tracker'
+      let currentView = "checklist"; // 'checklist' | 'tracker' | 'termination'
       let trackerFilter = { q: "", status: "", tech: "", quick: "" };
 
       // ============================================================
@@ -4303,13 +4386,21 @@
           📋 Checklist
         </button>
         <button class="view-tab${currentView === "tracker" ? " active" : ""}" onclick="setView('tracker')">
-          📊 Tracker <span class="badge">${inProgressCount}/${total}</span>
+          📊 Tracker
+        </button>
+        <button class="view-tab${currentView === "termination" ? " active" : ""}" onclick="setView('termination')">
+          🔴 Termination
         </button>
       </div>`;
 
         if (currentView === "tracker") {
           main.innerHTML = tabs + renderTrackerHtml();
           attachTrackerListeners();
+          return;
+        }
+        if (currentView === "termination") {
+          main.innerHTML = tabs + renderTerminationHtml();
+          attachTerminationListeners();
           return;
         }
         main.innerHTML = tabs + renderChecklistHtml();
@@ -4319,6 +4410,10 @@
         currentView = view;
         document.body.classList.toggle("view-tracker", view === "tracker");
         document.body.classList.toggle("view-checklist", view === "checklist");
+        document.body.classList.toggle(
+          "view-termination",
+          view === "termination",
+        );
         renderMain();
       }
 
@@ -4745,6 +4840,158 @@
           <tbody>${body}</tbody>
         </table>
       </div>`;
+      }
+
+      // ---------- Termination View ----------
+      function renderTerminationHtml() {
+        // Get all non-deleted records that are marked as terminations
+        const allTerminations = Object.keys(db)
+          .filter(
+            (id) => !db[id].deleted && db[id].deviceType === "Termination",
+          )
+          .map((id) => ({ id, h: db[id] }));
+
+        // If no active termination selected, show selection prompt
+        if (
+          !activeId ||
+          !db[activeId] ||
+          db[activeId].deleted ||
+          db[activeId].deviceType !== "Termination"
+        ) {
+          if (allTerminations.length === 0) {
+            return `<div class="no-hire"><div class="icon">👋</div><h2>No Terminations in Progress</h2><p>Click on "New Deployment" in the sidebar and select "Termination" as the device type to start a new termination record.</p></div>`;
+          }
+          return `<div class="no-hire"><div class="icon">👋</div><h2>Select a Termination Record</h2><p>Choose a termination from the sidebar to view and complete the checklist.</p></div>`;
+        }
+
+        const h = db[activeId];
+        const visibleEntries = TERMINATION_SECTIONS.map((sec, si) => ({
+          sec,
+          originalSi: si,
+        }));
+        const totalItems =
+          visibleEntries.reduce((a, { sec }) => a + sec.items.length, 0) || 1;
+        const rawDone = getChecked(h);
+        const done = rawDone;
+        const pct = h.forceComplete
+          ? 100
+          : Math.round((done / totalItems) * 100);
+        const isComplete = done === totalItems || h.forceComplete;
+
+        const sectionPills = visibleEntries
+          .map(({ sec, originalSi }) => {
+            const secDone = sec.items.filter(
+              (_, ii) => h.checks?.[`term_${originalSi}_${ii}`],
+            ).length;
+            const pillDone = h.forceComplete || secDone === sec.items.length;
+            return `<span class="phase-pill${pillDone ? " done" : ""}">${esc(sec.title)}</span>`;
+          })
+          .join("");
+
+        const completeBanner = isComplete
+          ? `<div class="complete-banner">✓ Termination checklist completed for ${esc(h.name)}</div>`
+          : "";
+
+        const sectionsHtml = visibleEntries
+          .map(({ sec, originalSi }, displayIndex) => {
+            const secDone = sec.items.filter(
+              (_, ii) => h.checks?.[`term_${originalSi}_${ii}`],
+            ).length;
+            const allDone = secDone === sec.items.length;
+            const isOpen = h.open?.[`term_${originalSi}`] !== false;
+            const safeKey = `term_${String(originalSi).replace(/'/g, "\\'")}`;
+            const itemsHtml = sec.items
+              .map((item, ii) => {
+                const key = `term_${originalSi}_${ii}`;
+                const checked = !!h.checks?.[key];
+                return `<div class="check-item" onclick="toggleItem('${safeKey}','${ii}')">
+            <input type="checkbox" ${checked ? "checked" : ""} onclick="event.stopPropagation();toggleItem('${safeKey}','${ii}')">
+            <div class="check-text">
+              <div class="check-label${checked ? " done" : ""}">${esc(item.text)}</div>
+              ${item.note ? `<div class="check-note">${esc(item.note)}</div>` : ""}
+            </div>
+          </div>`;
+              })
+              .join("");
+            return `<div class="section${isOpen ? " open" : ""}" id="sec-${esc(String(originalSi))}">
+          <div class="section-header" onclick="toggleSection('${safeKey}')">
+            <span class="section-num">${String(displayIndex + 1).padStart(2, "0")}</span>
+            <span class="section-title">${esc(sec.title)}</span>
+            <span class="section-badge${allDone ? " done" : ""}">${secDone}/${sec.items.length}</span>
+            <span class="chevron">►</span>
+          </div>
+          <div class="section-body">${itemsHtml}</div>
+        </div>`;
+          })
+          .join("");
+
+        const subLine = [
+          h.department,
+          h.hrNoticeDate ? "HR Notice: " + h.hrNoticeDate : "",
+        ]
+          .filter(Boolean)
+          .join(" • ");
+        const metaLine = [
+          h.pcName,
+          h.office ? "Office: " + h.office : "",
+          h.date ? "Date: " + h.date : "",
+        ]
+          .filter(Boolean)
+          .join(" • ");
+
+        const r = 26,
+          cx = 30,
+          cy = 30,
+          circ = 2 * Math.PI * r;
+        const dash = (pct / 100) * circ;
+
+        const status = h.status || "Pending";
+        const statusBadgeHtml = `<span class="status-badge ${statusClass(status)}">${esc(status)}</span>`;
+
+        return `
+      <div class="hire-header-wrap">
+        <div class="hire-title-wrap">
+          <div class="hire-title">${esc(h.name)}</div>
+          ${h.email ? `<div class="hire-subtitle">${esc(h.email)}</div>` : ""}
+          ${subLine ? `<div class="hire-subtitle">${esc(subLine)}</div>` : ""}
+          ${metaLine ? `<div class="hire-subtitle" style="margin-top:3px;font-size:11px;font-weight:500">${metaLine}</div>` : ""}
+          <div class="meta-row">
+            ${statusBadgeHtml}
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn export" onclick="exportPDF()">📄 Export PDF</button>
+          <button class="btn" onclick="checkAllBoxes()">✓ Check All</button>
+          <button class="btn" onclick="forceComplete()">⚡ ${h.forceComplete ? "Unforce Complete" : "Force Complete"}</button>
+          <button class="btn danger" onclick="deleteHire('${activeId}')">Delete</button>
+        </div>
+      </div>
+      ${completeBanner}
+      <div class="progress-card">
+        <div>
+          <svg class="ring" width="60" height="60" viewBox="0 0 60 60">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2C3D54" stroke-width="5"/>
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#00D9FF" stroke-width="5"
+              stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+              stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+          </svg>
+        </div>
+        <div class="progress-stats">
+          <div class="progress-fraction">${done}<span style="font-size:16px;color:var(--text-faint)"> / ${totalItems}</span></div>
+          <div class="progress-label">${pct}% complete</div>
+          <div class="phase-pills">${sectionPills}</div>
+        </div>
+      </div>
+      ${sectionsHtml}
+      <div class="notes-section">
+        <div class="notes-header">Termination Notes <span>// log any issues here</span></div>
+        <textarea class="notes" placeholder="Any special notes or issues..." oninput="saveNotes(this.value)">${esc(h.notes || "")}</textarea>
+      </div>`;
+      }
+
+      function attachTerminationListeners() {
+        // Termination view uses same toggle handlers as checklist
+        // No additional listeners needed at this time
       }
 
       function attachTrackerListeners() {
