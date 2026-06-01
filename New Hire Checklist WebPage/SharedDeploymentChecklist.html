@@ -368,6 +368,12 @@
       .hire-row-dot.status-returned {
         background: #8a8a8a;
       }
+      .hire-row-dot.status-termination-in-progress {
+        background: #d4a373;
+      }
+      .hire-row-dot.status-termination-complete {
+        background: #d65c5c;
+      }
       .hire-row-name {
         flex: 1;
         min-width: 0;
@@ -419,8 +425,27 @@
         color: #aaa;
         background: rgba(170, 170, 170, 0.12);
       }
+      .hire-row-status.status-termination-in-progress {
+        color: #d4a373;
+        background: rgba(212, 163, 115, 0.15);
+      }
+      .hire-row-status.status-termination-complete {
+        color: #d65c5c;
+        background: rgba(214, 92, 92, 0.12);
+      }
 
-      /* Sidebar filter bar (Sort + Tech) */
+      /* Section description styling */
+      .section-description {
+        background: var(--surface-alt);
+        border-left: 3px solid var(--info-border);
+        color: var(--text-muted);
+        font-size: 12px;
+        padding: 8px 12px;
+        margin: 0 0 12px 0;
+        border-radius: var(--radius);
+        font-style: italic;
+        line-height: 1.5;
+      }
       .sb-filter-bar {
         display: flex;
         gap: 6px;
@@ -871,6 +896,8 @@
         justify-content: space-between;
         margin-bottom: 28px;
         gap: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
       }
 
       .hire-title-wrap {
@@ -888,6 +915,7 @@
         font-size: 13px;
         color: var(--text-muted);
         font-family: var(--mono);
+        margin-top: 4px;
       }
 
       .header-actions {
@@ -1141,6 +1169,18 @@
         color: var(--text-faint);
         font-family: var(--mono);
         margin-top: 3px;
+        line-height: 1.5;
+      }
+
+      .section-description {
+        background: var(--surface-alt);
+        border-left: 3px solid var(--secondary);
+        color: var(--text-muted);
+        font-size: 12px;
+        padding: 8px 12px;
+        margin: 0 0 12px 0;
+        border-radius: var(--radius);
+        font-style: italic;
         line-height: 1.5;
       }
 
@@ -1411,12 +1451,27 @@
       .status-returned::before {
         background: var(--neutral-accent);
       }
+      .status-termination-in-progress {
+        color: #d4a373;
+        border-color: #d4a373;
+      }
+      .status-termination-in-progress::before {
+        background: #d4a373;
+      }
+      .status-termination-complete {
+        color: #d65c5c;
+        border-color: #d65c5c;
+        background: rgba(214, 92, 92, 0.08);
+      }
+      .status-termination-complete::before {
+        background: #d65c5c;
+      }
 
       .meta-row {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 8px;
+        margin-top: 12px;
         align-items: center;
       }
 
@@ -2194,6 +2249,10 @@
             <option value="Deployed">Deployed</option>
             <option value="On Hold">On Hold</option>
             <option value="Returned">Returned</option>
+            <option value="Termination In Progress">
+              Termination In Progress
+            </option>
+            <option value="Termination Complete">Termination Complete</option>
           </select>
         </div>
 
@@ -3110,6 +3169,8 @@
         },
         {
           title: "Office Admin",
+          description:
+            "If user is located in a remote office location, please reach out to the corresponding office coordinator regarding laptop shipping and return logistics.",
           items: [
             { text: "Troy: Trish Bianchini", note: "" },
             { text: "Suffern: Joanne Strassburg", note: "" },
@@ -4118,6 +4179,15 @@
         const list = document.getElementById("hire-list");
         if (!list) return;
 
+        // Update button label based on current view
+        const newHireBtn = document.querySelector(".new-hire-btn");
+        if (newHireBtn) {
+          newHireBtn.textContent =
+            currentView === "termination"
+              ? "+ New Termination"
+              : "+ New Deployment";
+        }
+
         // Build filter bar (status sort + tech picker) once.
         ensureSidebarFilterBar();
         // Reflect current state on the controls.
@@ -4151,8 +4221,15 @@
         const liveIds = Object.keys(db).filter((id) => !db[id].deleted);
         // Apply tech filter
         const filteredIds = liveIds.filter((id) => {
+          const h = db[id];
+          // Filter by current view: show terminations only in termination view
+          if (currentView === "termination" && h.deviceType !== "Termination")
+            return false;
+          if (currentView !== "termination" && h.deviceType === "Termination")
+            return false;
+          // Apply tech filter
           if (!sidebarTech) return true;
-          const t = (db[id].technician || "").trim();
+          const t = (h.technician || "").trim();
           if (sidebarTech === "__unassigned__") return !t;
           return t.toLowerCase() === sidebarTech.toLowerCase();
         });
@@ -4178,6 +4255,8 @@
             "Deployed",
             "On Hold",
             "Returned",
+            "Termination In Progress",
+            "Termination Complete",
           ];
           const buckets = new Map();
           STATUS_GROUPS.forEach((s) => buckets.set(s, []));
@@ -4415,12 +4494,16 @@
           view === "termination",
         );
         renderMain();
+        renderSidebar();
       }
 
       // ---------- Checklist View ----------
       function renderChecklistHtml() {
         if (!activeId || !db[activeId] || db[activeId].deleted) {
           return `<div class="no-hire"><div class="icon">💻</div><h2>No deployment selected</h2><p>Select a deployment from the sidebar, switch to the <strong>Tracker</strong> tab,<br/>or create a new one.</p></div>`;
+        }
+        if (db[activeId].deviceType === "Termination") {
+          return `<div class="no-hire"><div class="icon">⚠️</div><h2>Termination Record</h2><p>This is a termination record. Please switch to the <strong>Termination</strong> tab to view and manage terminations.</p></div>`;
         }
 
         const h = db[activeId];
@@ -4656,13 +4739,18 @@
           hold: 0,
           replacement: 0,
           newDevice: 0,
+          termination: 0,
         };
         all.forEach(({ h }) => {
-          if (h.status === "On Hold") counts.hold++;
-          if (h.status === "Ready for Deployment") counts.ready++;
-          if (h.status === "Pending Setup") counts.pending++;
-          if (h.status === "Deployed") counts.deployed++;
-          else counts.inprogress++;
+          if (h.deviceType === "Termination") {
+            counts.termination++;
+          } else {
+            if (h.status === "On Hold") counts.hold++;
+            if (h.status === "Ready for Deployment") counts.ready++;
+            if (h.status === "Pending Setup") counts.pending++;
+            if (h.status === "Deployed") counts.deployed++;
+            else counts.inprogress++;
+          }
           if (h.deviceType === "Replacement" || h.deviceType === "Redeployment")
             counts.replacement++;
           if (h.deviceType === "New") counts.newDevice++;
@@ -4687,6 +4775,8 @@
           "Deployed",
           "On Hold",
           "Returned",
+          "Termination In Progress",
+          "Termination Complete",
         ]
           .map(
             (s) =>
@@ -4699,7 +4789,7 @@
         const quickMatch = ({ h }) => {
           switch (trackerFilter.quick) {
             case "active": {
-              return h.status !== "Deployed";
+              return h.deviceType !== "Termination" && h.status !== "Deployed";
             }
             case "ready":
               return h.status === "Ready for Deployment";
@@ -4714,6 +4804,8 @@
                 h.deviceType === "Replacement" ||
                 h.deviceType === "Redeployment"
               );
+            case "termination":
+              return h.deviceType === "Termination";
             default:
               return true;
           }
@@ -4762,6 +4854,7 @@
         <button type="button" class="${tileCls("deployed")}" onclick="setTrackerQuick('deployed')" title="Show Deployed only"><div class="num">${counts.deployed}</div><div class="lbl">Deployed</div></button>
         <button type="button" class="${tileCls("new")}" onclick="setTrackerQuick('new')" title="Show New devices only"><div class="num">${counts.newDevice}</div><div class="lbl">New</div></button>
         <button type="button" class="${tileCls("replacement")}" onclick="setTrackerQuick('replacement')" title="Show Replacement devices only"><div class="num">${counts.replacement}</div><div class="lbl">Redeploys</div></button>
+        <button type="button" class="${tileCls("termination")}" onclick="setTrackerQuick('termination')" title="Show Terminations only"><div class="num">${counts.termination}</div><div class="lbl">Terminations</div></button>
       </div>`;
 
         const toolbar = `
@@ -4913,15 +5006,17 @@
           </div>`;
               })
               .join("");
-            return `<div class="section${isOpen ? " open" : ""}" id="sec-${esc(String(originalSi))}">
+            const sectionHtml = `<div class="section${isOpen ? " open" : ""}" id="sec-${esc(String(originalSi))}">
           <div class="section-header" onclick="toggleSection('${safeKey}')">
             <span class="section-num">${String(displayIndex + 1).padStart(2, "0")}</span>
             <span class="section-title">${esc(sec.title)}</span>
             <span class="section-badge${allDone ? " done" : ""}">${secDone}/${sec.items.length}</span>
             <span class="chevron">►</span>
           </div>
+          ${sec.description ? `<div class="section-description">${esc(sec.description)}</div>` : ""}
           <div class="section-body">${itemsHtml}</div>
         </div>`;
+            return sectionHtml;
           })
           .join("");
 
@@ -4945,18 +5040,29 @@
           circ = 2 * Math.PI * r;
         const dash = (pct / 100) * circ;
 
-        const status = h.status || "Pending";
+        const status = h.status || "Termination In Progress";
         const statusBadgeHtml = `<span class="status-badge ${statusClass(status)}">${esc(status)}</span>`;
+        const statusOptions = [
+          "Termination In Progress",
+          "Termination Complete",
+        ]
+          .map(
+            (s) =>
+              `<option value="${esc(s)}"${status === s ? " selected" : ""}>${esc(s)}</option>`,
+          )
+          .join("");
 
         return `
-      <div class="hire-header-wrap">
+      <div class="hire-header">
         <div class="hire-title-wrap">
           <div class="hire-title">${esc(h.name)}</div>
           ${h.email ? `<div class="hire-subtitle">${esc(h.email)}</div>` : ""}
           ${subLine ? `<div class="hire-subtitle">${esc(subLine)}</div>` : ""}
-          ${metaLine ? `<div class="hire-subtitle" style="margin-top:3px;font-size:11px;font-weight:500">${metaLine}</div>` : ""}
+          ${metaLine ? `<div class="hire-subtitle">${metaLine}</div>` : ""}
           <div class="meta-row">
             ${statusBadgeHtml}
+            <select onchange="updateField('status', this.value); renderSidebar(); renderMain();" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-family:var(--mono);font-size:11px;">${statusOptions}</select>
+            ${h.deviceType ? `<span class="phase-pill">${esc(h.deviceType)}</span>` : ""}
           </div>
         </div>
         <div class="header-actions">
@@ -5650,6 +5756,10 @@
             return "status-hold";
           case "Returned":
             return "status-returned";
+          case "Termination In Progress":
+            return "status-termination-in-progress";
+          case "Termination Complete":
+            return "status-termination-complete";
           default:
             return "status-pending";
         }
