@@ -1,0 +1,33 @@
+Used to grab device hashes to effectively make them autopiloted 
+
+
+~Setup~
+
+1. Create the Entra app registration
+
+Entra admin center → App registrations → New registration
+Name it something like AutopilotHashCollector
+After creating: go to API permissions → Add → Microsoft Graph → Application permissions → Sites.ReadWrite.All → Grant admin consent
+Go to Certificates & secrets → New client secret — copy the value immediately
+
+2. Create the SharePoint document library
+
+Go to your SharePoint site → New → Document library
+Name it AutopilotHashes (or whatever you set in $LibraryName)
+
+3. Fill in the config block in both scripts — same 5 values in each:
+$TenantId, $ClientId, $ClientSecret, $SharePointSiteUrl, $LibraryName
+
+
+~Deployment~
+
+1. Collect-AutopilotHash-Local.ps1 → deploy via Intune:
+
+Intune admin center → Devices → Scripts → Add → Windows 10 and later
+Run as: SYSTEM, run in 64-bit: Yes
+Require Signature Check: No
+Assign to your device group
+
+2. Merge-AutopilotHashes.ps1 → run on your admin machine once devices have checked in:
+
+Output: C:\AutopilotHashes\AutopilotDevices.csv  ← import this into Intune
