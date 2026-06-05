@@ -3004,6 +3004,7 @@
           { text: "Revit 25", note: "" },
           { text: "Autocad 25", note: "" },
           { text: "Unifi", note: "" },
+          { text: "H2M Autodesk CUstomizations", note: "" },
           {
             text: "Reset 2025",
             note: "Run Reset 2025 settings after h2m Autodesk customizations are installed- Location: C:\\\_H2MSTDS\\\_Common\\\Utilities",
@@ -3014,11 +3015,8 @@
           },
         ],
         "Civil-Survey": [
-          {
-            text: "Placeholder Application",
-            note: "",
-          },
-          { text: "Placeholder Application", note: "" },
+          { text: "Autocad 25", note: "" },
+          { text: "Civil 3D", note: ""},
           {
             text: "Placeholder Application",
             note: "",
@@ -3026,19 +3024,19 @@
           { text: "Placeholder Application", note: "" },
         ],
         Electrical: [
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          {
-            text: "Placeholder Application",
-            note: "",
-          },
+          { text: "EDR", note: "" },
+          { text: "AGI", note: "" },
           { text: "Placeholder Application", note: "" },
         ],
         Water: [
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
-          { text: "Placeholder Application", note: "" },
+          { text: "Revit 23", note: "" },
+          { text: "Revit 25", note: "" },
+          { text: "Autocad 25", note: "" },
+          { text: "H2M Autodesk CUstomizations", note: "" },
+          {
+            text: "Reset 2025",
+            note: "Run Reset 2025 settings after h2m Autodesk customizations are installed- Location: C:\\\_H2MSTDS\\\_Common\\\Utilities",
+          },
         ],
         Environmental: [
           {
@@ -5292,13 +5290,26 @@
 
       function checkAllBoxes() {
         if (!activeId) return;
+
         const h = db[activeId];
         if (!h.checks) h.checks = {};
-        effectiveSectionsWithKeys(h).forEach(({ sec, originalSi }) => {
+
+        const isTermination = h.deviceType === "Termination";
+
+        const sections = isTermination
+          ? TERMINATION_SECTIONS.map((sec, si) => ({ sec, originalSi: si }))
+          : effectiveSectionsWithKeys(h);
+
+        sections.forEach(({ sec, originalSi }) => {
           sec.items.forEach((_, ii) => {
-            h.checks[`${originalSi}_${ii}`] = true;
+            const key = isTermination
+              ? `term_${originalSi}_${ii}`
+              : `${originalSi}_${ii}`;
+
+            h.checks[key] = true;
           });
         });
+
         h.forceComplete = false;
         recomputeAutoStatus(h);
         save();
