@@ -2013,6 +2013,15 @@
             >
               ✕
             </button>
+            <button
+            class="entra-btn"
+            id="repick-btn"
+            style="display: none"
+            title="Manualy Pick a folder to use"
+            onclick="repickFile()"
+          >
+            🔌
+          </button>
           </div>
         </div>
 
@@ -3004,7 +3013,7 @@
           { text: "Revit 25", note: "" },
           { text: "Autocad 25", note: "" },
           { text: "Unifi", note: "" },
-          { text: "H2M Autodesk CUstomizations", note: "" },
+          { text: "H2M Autodesk Customizations", note: "" },
           {
             text: "Reset 2025",
             note: "Run Reset 2025 settings after h2m Autodesk customizations are installed- Location: C:\\\_H2MSTDS\\\_Common\\\Utilities",
@@ -3013,20 +3022,31 @@
             text: "For Structural Users Add device to SofTrack on mgnt-server",
             note: "",
           },
+          {
+            text: "For Structural Users Install EnerCalc",
+            note: "",
+          },
         ],
         "Civil-Survey": [
           { text: "Autocad 25", note: "" },
-          { text: "Civil 3D", note: ""},
+          { text: "Civil 3D", note: "" },
+          { text: "H2M Autodesk Customizations", note: "" },
           {
-            text: "Placeholder Application",
-            note: "",
+            text: "Reset 2025",
+            note: "Run Reset 2025 settings after h2m Autodesk customizations are installed- Location: C:\\\_H2MSTDS\\\_Common\\\Utilities",
           },
           { text: "Placeholder Application", note: "" },
         ],
         Electrical: [
           { text: "EDR", note: "" },
           { text: "AGI", note: "" },
-          { text: "Placeholder Application", note: "" },
+          { text: "Autocad 25", note: "" },
+          { text: "Civil 3D", note: "" },
+          { text: "H2M Autodesk Customizations", note: "" },
+          {
+            text: "Reset 2025",
+            note: "Run Reset 2025 settings after h2m Autodesk customizations are installed- Location: C:\\\_H2MSTDS\\\_Common\\\Utilities",
+          },
         ],
         Water: [
           { text: "Revit 23", note: "" },
@@ -3269,7 +3289,7 @@
       // a reload.
       // ============================================================
       const SHARE_PATH_HINT =
-        "\\\\app-server\\APPS\\Device Deployment Checklist\\";
+        "%OneDrive%\IT - IT Information\IT Operations\User Management\_Automation & Scripts\Device Deployment Checklist";
       const SHARED_FILE_NAME = "deployments.json";
       const LOCK_FILE_NAME = "deployments.lock";
       const BACKUPS_DIR_NAME = "backups";
@@ -3361,6 +3381,9 @@
           ? "Grant write access to deployments.json so your changes save"
           : "Pick the shared folder containing deployments.json";
         document.getElementById("refresh-btn").style.display = connected
+          ? "block"
+          : "none";
+        document.getElementById("repick-btn").style.display = connected
           ? "block"
           : "none";
         document.getElementById("disconnect-btn").style.display = connected
@@ -3524,7 +3547,11 @@
           fetchPollTimer = null;
         }
       }
-
+      // Used for the button to force a refresh when handle is bugged
+      async function repickFile() {
+        await disconnectShared();
+        await connectSharedFile();
+      }
       async function connectSharedFile() {
         if (!("showDirectoryPicker" in window)) {
           alert(
@@ -3536,6 +3563,7 @@
           // If we already have a stored handle, just re-grant -- no
           // folder picker needed. This keeps the workflow to a single
           // permission prompt instead of picker + prompt.
+
           let handle = dirHandle || (await idbGet("dirHandle"));
           if (!handle) {
             handle = await window.showDirectoryPicker({
@@ -3562,9 +3590,11 @@
           );
         } catch (e) {
           if (e && e.name === "AbortError") return; // user cancelled
+          // if (e && e.name === )
           console.error("connectSharedFile failed:", e);
           const name = e && e.name ? e.name : "Error";
           const msg = e && e.message ? e.message : String(e);
+          forgetSharedHandle();
           let hint = "";
           if (
             name === "SecurityError" ||
